@@ -150,7 +150,7 @@ search/definition lookup.
                     (EBNF + operator precedence incl. the juxtaposition-vs-`/`
                     footgun + directive reference, pinned to data v3.26, grounded
                     in the bundled file).
-        [ ] 2.4.8.  Build the pure-Python PARSER + evaluator per
+        [x] 2.4.8.  Build the pure-Python PARSER + evaluator per
                     docs/definitions-format.md, validated against the units(1)
                     binary as a test oracle. The units grammar has base + derived
                     units, SI/binary prefixes, nonlinear units (tempC/tempF, dB)
@@ -158,9 +158,33 @@ search/definition lookup.
                     directives. The big FUTURE ENGINE work — see §13. Also load
                     the DB at runtime via importlib.resources, NOT a relative
                     path (§3.5).
-        [ ] 2.4.9.  INVARIANT to uphold during engine work: pure-Python ⇒ NO new
+                    DONE 2026-06-19 — src/mcp_gnu_units/engine/ (15 modules):
+                    number/dimension/quantity (exact Fraction-first numerics +
+                    dimension algebra), lexer/ast/parser (recursive-descent
+                    precedence ladder that encodes the juxtaposition-vs-`/`
+                    footgun), symbols/directives/loader (one forward pass via
+                    importlib.resources; conditional-block gating; logical-line
+                    assembly), evaluator (name + longest-single-prefix + plural
+                    resolution; nonlinear forward/inverse + `~`; table interp),
+                    builtins (sqrt/cuberoot/log/trig), functions/tables, convert
+                    (Database: convert/convert_to_si/reduce/find_units/
+                    list_prefixes/describe + get_database singleton). Bare prefix
+                    names resolve to their multiplier (`kilo`==1000); missing
+                    `!include` targets (currency/crypto/elements) are skipped just
+                    as the binary does. Tests: tests/engine/ (91 total) — golden
+                    pins (1 mi→1.609344 km, 0 tempC→32 tempF, 1 kW·hour→3.6e6 J,
+                    inconvertible errors cleanly) + a units(1) differential oracle
+                    (`units -f` bundled DB, @skipif when absent). Differential
+                    sweep over all 2938 SI-reducible derived units: 0 mismatches.
+                    FOLLOW-ONS NOW UNBLOCKED: §2.4.6 (info DB version) and §13
+                    (the 5 MCP tools) can call engine.get_database().
+        [x] 2.4.9.  INVARIANT to uphold during engine work: pure-Python ⇒ NO new
                     runtime dependency (json-repair from §2.1.5 stays the only
-                    extra). Verify at engine-merge time.
+                    extra). Verify at engine-merge time. VERIFIED 2026-06-19 —
+                    engine uses only stdlib (decimal, fractions, importlib.
+                    resources, re, math); dependencies still [mcp, json-repair].
+                    The units(1) binary is a DEV/TEST oracle only (apt install
+                    units), never shipped or called at runtime.
 
 
 [x] 3.  pyproject.toml
