@@ -160,17 +160,20 @@ search/definition lookup.
     [x] 3.4.  [project.scripts]:
               mcp-gnu-units = "mcp_gnu_units.__main__:main".
               (entry point target main() built in §4.2.)
-    [~] 3.5.  [tool.hatch.build.targets.wheel] packages set. FORCE-INCLUDE of the
-              bundled DB is DEFERRED to engine work — no data file exists yet; a
-              placeholder comment marks the spot in pyproject.toml.
-              ⚠️ FORCE-INCLUDE the bundled DB (§2.4): ensure
-              src/mcp_gnu_units/data/definitions.units lands in the wheel +
-              sdist — hatchling ships files under a packaged dir by default, but
-              VERIFY it's in BOTH artifacts (`unzip -l dist/*.whl | grep
-              definitions` AND `tar tzf dist/*.tar.gz | grep definitions`) and
-              add `[tool.hatch.build.targets.wheel.force-include]` (+ a matching
-              sdist target) or `artifacts` if a build excludes it. Load it at
-              runtime via importlib.resources, NOT a relative path.
+    [x] 3.5.  [tool.hatch.build.targets.wheel] packages set + FORCE-INCLUDE of
+              the bundled DB DONE (2026-06-19). The file landed at
+              src/mcp_gnu_units/data/definitions.units (GNU units 2.27, data
+              version 3.26 / 2026-02-25; GPG-verified Good signature from Adrian
+              Mariano; sha256 of the data file
+              18b47992d3049818e09abedbbc7ef8358ff2944cbac82d0460eb78666db83600).
+              Added [tool.hatch.build.targets.wheel.force-include] mapping it to
+              mcp_gnu_units/data/definitions.units + a [tool.hatch.build.targets
+              .sdist] include list. VERIFIED in BOTH artifacts (`unzip -l
+              dist/*.whl | grep definitions` → mcp_gnu_units/data/
+              definitions.units; `tar tzf dist/*.tar.gz | grep definitions` →
+              present), and the wheel copy's sha256 matches the source.
+              ⚠️ STILL TODO (engine work): load it at runtime via
+              importlib.resources, NOT a relative path.
     [x] 3.6.  ruff config (line length 100, target-version py310) under [tool.ruff].
 
 
