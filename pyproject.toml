@@ -1,0 +1,73 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-gnu-units"
+version = "0.0.1"
+description = "Unit converter powered by the GNU units database — convert between 3000+ units of measurement, evaluate compound unit expressions, reduce quantities to SI base units, and look up unit definitions. Offline and deterministic."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [
+    { name = "László Pere", email = "226979892+laszlopere@users.noreply.github.com" },
+]
+keywords = [
+    "units",
+    "unit-conversion",
+    "unit-converter",
+    "convert",
+    "measurement",
+    "gnu-units",
+    "dimensional-analysis",
+    "si-units",
+    "metric",
+    "imperial",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "mcp>=1.2",
+    "json-repair>=0.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.11"]
+
+[project.scripts]
+mcp-gnu-units = "mcp_gnu_units.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_gnu_units"]
+# FUTURE (§2.4/§3.5): when the bundled GNU units database lands at
+# src/mcp_gnu_units/data/definitions.units, VERIFY it ships in both wheel and
+# sdist and add a [tool.hatch.build.targets.wheel.force-include] entry if a
+# build excludes it. No data file exists yet, so nothing to force-include now.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true

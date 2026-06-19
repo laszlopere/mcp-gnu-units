@@ -1,0 +1,584 @@
+================================================================================
+mcp-gnu-units — BOOTSTRAP TODO
+--------------------------------------------------------------------------------
+GOAL: from this empty directory, stand up the skeleton of a pure-Python MCP
+server that will (later) expose the GNU `units` engine — precise unit conversion,
+dimensional analysis, and unit-expression evaluation over the 3000+ unit GNU
+units database. When every box below is checked the server starts over stdio,
+exposes exactly ONE tool, and that tool reports the server's availability +
+version information. No domain features yet (conversion/dimensional-analysis
+come later — see the FUTURE note at the end).
+
+DONE = `mcp-gnu-units` runs, a client lists one tool, and calling it returns
+       {status: "available", name, version, ...}.
+
+Checkbox legend:  [ ] not started   [~] in progress   [x] done
+
+--------------------------------------------------------------------------------
+WHY THIS PROJECT / POSITIONING  (from the 2026-06-19 Glama landscape research)
+--------------------------------------------------------------------------------
+The Glama unit-conversion field is crowded with category-locked converters
+(zazencodes' "Unit Converter MCP" with 15 one-per-category tools is the leader;
+guptaprakhariitr, kdaehun00, CSOAI, Robbo-lab follow). The literal slug
+`unit-converter-mcp` collides across THREE authors, and NO server uses the GNU
+`units` engine. Open keyword space nobody owns: "GNU units", "dimensional
+analysis", "unit expression", "SI base units". We win on capabilities every
+existing server lacks: arbitrary unit-EXPRESSION evaluation and DATABASE
+search/definition lookup.
+
+  NAME      : mcp-gnu-units   (matches the mcp-* family: mcp-tmux/-bytesmith/
+              -kodi/-abacus/-molecules; owns the uncontested "GNU units" keyword
+              + still substring-matches "units"; PyPI/GitHub free as of
+              2026-06-19.)
+              ⚠️ WHY NOT mcp-units: that name is ALREADY TAKEN on PyPI
+              (pypi.org/project/mcp-units, v0.3.3, "MCP server for cooking unit
+              conversions", author sellisd) — a competing converter — so `uvx
+              mcp-units` was impossible. Verified free alternates on file:
+              gnu-units-mcp, mcp-unitsmith, mcp-unit-convert, mcp-dimension.
+              LESSON: check PyPI + Glama for the dist name BEFORE committing to
+              it — the name is effectively frozen once published/indexed.
+  LICENSE   : GPL-3.0-or-later. NOTE: the GNU units database (definitions.units)
+              is itself GPL-3.0-or-later, © Free Software Foundation — reusing it
+              in a GPLv3 server is squarely compatible. Keep its header intact.
+================================================================================
+
+
+[~] 1.  PROJECT SCAFFOLDING (src layout)
+    [x] 1.1.  Create the package tree:
+              src/mcp_gnu_units/__init__.py    (real content per §4.3)
+              src/mcp_gnu_units/server.py      (GPL-header placeholder; fill §4-5)
+              src/mcp_gnu_units/__main__.py    (GPL-header placeholder; fill §4.2)
+              tests/test_info.py               (GPL-header placeholder; fill §7.2)
+    [x] 1.2.  Add top-level files: README.md (skeleton; final form at §10.5),
+              LICENSE (GPL-3.0-or-later, copied verbatim from sibling),
+              .gitignore (Python template, copied from sibling); TODO stays at
+              repo root.
+    [~] 1.3.  Version control:
+        [~] 1.3.1.  `git init` DONE (branch master); first commit deferred until
+                    section 2 (pyproject) exists, per this line's own rule.
+        [x] 1.3.2.  DONE — bare repo created on homelab "git" host at
+                    ~/mcp-gnu-units.git (HEAD -> master). PRIVATE server.
+        [~] 1.3.3.  origin remote ADDED: `git@git:mcp-gnu-units.git`. The
+                    `git push -u origin master` still PENDING the first commit
+                    (deferred to §1.3.1 — after section 2 exists).
+        [ ] 1.3.4.  Pushing to "git" is a PRIVATE upload to the local server
+                    only — NOT public. (A public GitHub remote for CI is
+                    separate; see section 8.)
+    [x] 1.4.  Distribution name "mcp-gnu-units", import package name "mcp_gnu_units"
+              (underscore). Consistent across the tree as created.
+
+
+[~] 2.  DEPENDENCIES (enumerate now; install via uv)
+    [x] 2.1.  Runtime (required):
+        [x] 2.1.1.  mcp — the official MCP Python SDK; bundles FastMCP.
+                    Import: `from mcp.server.fastmcp import FastMCP`.
+                    Pinned `mcp>=1.2` (resolved 1.28.0).
+        [x] 2.1.2.  Python >= 3.10 (FastMCP requirement) — requires-python set.
+        [x] 2.1.3.  Version read at runtime from package metadata via
+                    importlib.metadata (stdlib) — NO extra dep. Wired in §4.3.
+        [x] 2.1.4.  The skeleton's one tool (info) needs NOTHING beyond the
+                    above. The GNU units ENGINE is a FUTURE dependency, not the
+                    skeleton's — decide it in 2.4, wire it after section 9.
+        [x] 2.1.5.  json-repair — pure-Python, zero-dep; the one extra runtime
+                    dep, for the LLM-mangled-JSON tolerance wiring (§4.6).
+                    Pinned `json-repair>=0.30` (resolved via lock).
+    [x] 2.1.6.  FIXED-POINT NUMERIC CORE — ✅ DECIDED (2026-06-19): NO new dep.
+                    The engine (§2.4 / FUTURE) needs fixed-point arithmetic that
+                    also computes the number of decimals actually required and
+                    labels each result exact vs inexact — the same numeric model
+                    mcp-abacus exposes. Abacus does this with the Python STDLIB
+                    ONLY: `decimal.Decimal` + `decimal.localcontext` (fixed-point
+                    / exact-scaled-integer + per-op precision / rounding readout),
+                    `fractions.Fraction` (exact rational), and `math` for floats.
+                    Its sole external deps are `mcp` + `json-repair` — BOTH already
+                    in our plan (§2.1.1, §2.1.5) — so the fixed-point math adds
+                    NOTHING to dependencies.
+                    POLICY: align with mcp-abacus's DEPENDENCY CHOICES where
+                    feasible (stay on stdlib decimal/fractions; same mcp +
+                    json-repair floors), but DO NOT share or copy mcp-abacus CODE
+                    — we re-implement our own numeric core for the units engine.
+                    Treat ../mcp-abacus as a READ-ONLY reference for the approach
+                    (see its src/mcp_abacus/expr/value.py for the exact/inexact +
+                    rounded-to-N-decimals verdict pattern), not a code source.
+    [x] 2.2.  Dev / tooling:
+        [x] 2.2.1.  uv — env, dependency resolution, lockfile (uv.lock generated
+                    via `uv sync --extra dev`).
+        [x] 2.2.2.  pytest — test runner (dev extra: pytest>=8.0).
+        [ ] 2.2.3.  pytest-asyncio — NOT added (info() is sync; add lazily only
+                    if a future tool is async).
+        [x] 2.2.4.  ruff — lint + format (dev extra: ruff>=0.6; `ruff check` green).
+        [x] 2.2.5.  mypy — optional static typing (dev extra: mypy>=1.11; configured).
+    [x] 2.3.  Build backend: hatchling.
+    [x] 2.4.  ENGINE — ✅ DECIDED (2026-06-19): SHIP A COPY of the GNU units
+              database and parse it with OUR OWN pure-Python parser. NO reliance
+              on a system `units(1)` binary.
+              WHY (chosen over the subprocess approach): works cross-platform
+              (Windows / macOS / Linux — no PATH or install dependency), faster
+              (no process spawn per call), fully offline + genuinely deterministic
+              (we PIN the DB version, so the frozen description's "deterministic"
+              claim is now unconditionally true), and we own the engine. Bonus:
+              no subprocess ⇒ no shell-injection / file-include / `!`-define
+              attack surface to defend.
+              OBLIGATIONS / NOTES:
+                - Ship the data at e.g. src/mcp_gnu_units/data/definitions.units
+                  and FORCE-INCLUDE it in the wheel (§3.5) — it is PACKAGE DATA,
+                  not importable code.
+                - PIN + record the upstream DB version shipped (e.g. GNU units
+                  2.27 definitions.units, 2026-04-01); surface it from info()
+                  (§5.4); document provenance in README.
+                - LICENSE: definitions.units is GPL-3.0-or-later © FSF — ship it
+                  VERBATIM with its copyright header intact, add a NOTICE crediting
+                  GNU units / the FSF, reference it from the README homage
+                  (§10.5.2). Our code is GPLv3 too ⇒ wholly compatible.
+                - The PARSER is its own real piece of work (FUTURE): the units
+                  grammar has base + derived units, SI/binary prefixes, nonlinear
+                  units (tempC/tempF, dB) defined via functions, piecewise defs,
+                  and `!`/`!include` directives. Scope + validate it there.
+                - Pure-Python ⇒ NO new runtime dep for the engine (json-repair
+                  from §2.1.5 stays the only extra).
+
+
+[x] 3.  pyproject.toml
+    [x] 3.1.  [build-system] requires = ["hatchling"];
+              build-backend = "hatchling.build".
+    [x] 3.2.  [project]: name="mcp-gnu-units", version="0.0.1",
+              requires-python=">=3.10",
+              dependencies=["mcp>=1.2", "json-repair>=0.30"]  (json-repair per
+              §2.1.5 / §4.6), description, readme, license="GPL-3.0-or-later",
+              authors.
+              DESCRIPTION: use the PRIMARY line from THE FINAL DESCRIPTION block
+              (bottom of this file) VERBATIM — do NOT invent a string here. It is
+              the text Glama freezes at first index (§12.0) + the PyPI summary
+              (§11.5); it must lead with the searched words ("Unit converter…").
+              Set it correctly before any publish/index — there is no later fix.
+    [x] 3.3.  [project.optional-dependencies]: dev=[pytest, ruff, mypy].
+              (No FUTURE engine extra needed — the engine is pure-Python +
+              bundled data per §2.4; the data file ships in the wheel, not as a
+              dependency.)
+    [x] 3.4.  [project.scripts]:
+              mcp-gnu-units = "mcp_gnu_units.__main__:main".
+              (entry point target main() built in §4.2.)
+    [~] 3.5.  [tool.hatch.build.targets.wheel] packages set. FORCE-INCLUDE of the
+              bundled DB is DEFERRED to engine work — no data file exists yet; a
+              placeholder comment marks the spot in pyproject.toml.
+              ⚠️ FORCE-INCLUDE the bundled DB (§2.4): ensure
+              src/mcp_gnu_units/data/definitions.units lands in the wheel +
+              sdist — hatchling ships files under a packaged dir by default, but
+              VERIFY it's in BOTH artifacts (`unzip -l dist/*.whl | grep
+              definitions` AND `tar tzf dist/*.tar.gz | grep definitions`) and
+              add `[tool.hatch.build.targets.wheel.force-include]` (+ a matching
+              sdist target) or `artifacts` if a build excludes it. Load it at
+              runtime via importlib.resources, NOT a relative path.
+    [x] 3.6.  ruff config (line length 100, target-version py310) under [tool.ruff].
+
+
+[ ] 4.  ARCHITECTURE / WIRING
+    [ ] 4.1.  server.py: construct the singleton FastMCP app —
+              `mcp = FastMCP("mcp-gnu-units", instructions=...)`. All tools register
+              here. Instructions string (server-level usage hint):
+              "Precise, offline unit conversion and dimensional analysis backed
+              by the GNU units database: convert between 3000+ units, evaluate
+              compound unit expressions, and search/define units. Deterministic
+              and local."
+    [ ] 4.2.  __main__.py: `def main(): mcp.run()` (stdio is default) and the
+              `if __name__ == "__main__": main()` guard. Import the app from
+              server.py so tools register on import.
+    [x] 4.3.  __init__.py: expose `__version__` via
+              importlib.metadata.version("mcp-gnu-units"), with a fallback for the
+              editable/unbuilt case. (Done during §1 scaffolding; verified
+              resolving to 0.0.1.)
+    [ ] 4.4.  Transport = stdio (what Claude Code/Desktop launch). No HTTP/SSE
+              in the skeleton.
+    [ ] 4.5.  Leave a marked spot in server.py for FUTURE domain-tool
+              registration (the units engine) — comment only, not built.
+    [ ] 4.6.  LLM-MANGLED-JSON TOLERANCE — make tool calls survive the broken
+              JSON LLMs sometimes emit (stringified/double-encoded args, single
+              quotes, trailing commas, barewords). Two failure layers → two
+              fixes. SHORT step-by-step below; the FULL rationale + code is in the
+              howto — FOLLOW it, do NOT copy verbatim:
+                REF (why/how)    : ~/projects/mcp-abacus/llm-json-errors-howto.text
+                REF IMPL (copy)  : ../mcp-bytesmith/src/mcp_bytesmith/ —
+                                   jsonfix.py + errors.py, the _BytesmithFastMCP
+                                   subclass in server.py, the stdio interposer in
+                                   __main__.py. (READ-ONLY sibling; don't edit.)
+        [ ] 4.6.1.  Add the `json-repair` runtime dep (§2.1.5 / §3.2).
+        [ ] 4.6.2.  FIX A — stringified args (the #1 offender) die at the
+                    session's STRICT validation BEFORE any tool hook, so they
+                    can't be caught in a tool. Repair them in a STDIO STREAM
+                    INTERPOSER: replace mcp.run() (§4.2) with an anyio runner that
+                    repairs `arguments` while it is still loosely-typed
+                    JSONRPCRequest.params. Put the repair fn in a new jsonfix.py;
+                    GUARD isinstance(parsed, dict) and hand the ORIGINAL back on
+                    failure (json-repair never raises — it coerces junk to ""/{} ).
+        [ ] 4.6.3.  FIX B — well-formed-but-wrong-shape args die later in
+                    FastMCP's per-tool pydantic validation. Subclass FastMCP and
+                    override call_tool to reshape the ValidationError (its
+                    __cause__) into a one-line, field-naming, expected-vs-received
+                    message in a new errors.py; leave tool-body errors untouched.
+                    The subclass INSTANCE is the app (mcp = _GnuUnitsFastMCP(...),
+                    §4.1).
+        [ ] 4.6.4.  (optional) When repair still can't produce an object, answer
+                    the request FROM the interposer with an actionable JSON-RPC
+                    -32700 parse error (don't forward it) instead of the SDK's
+                    bare -32602.
+        [ ] 4.6.5.  TESTS (§7): unit-test the pure fns (each offender; the
+                    garbage-guard; expected-vs-received phrasing; no pydantic
+                    URL), plus ONE raw-stdio end-to-end sending a STRING
+                    `arguments` blob (the typed ClientSession can't emit malformed
+                    args — it serializes a dict — so speak raw JSON-RPC).
+              SCOPE: behaviourless for well-formed input, so wire it WITH the
+              skeleton; its payoff shows once the FUTURE domain tools take real
+              arguments. Non-stdio transports (none in the skeleton) would need
+              the interposer applied there too.
+
+
+[ ] 5.  THE ONE TOOL  (availability + version report)
+    [ ] 5.1.  In server.py add a single tool: `@mcp.tool()` on
+              `def info() -> dict: ...`.
+    [ ] 5.2.  Return a dict with at least:
+              status   = "available"
+              name     = "mcp-gnu-units"
+              version  = __version__ (from 4.3)
+              python   = platform.python_version()
+              mcp_sdk  = installed mcp SDK version (importlib.metadata)
+              toolsets = []   (placeholder; filled when the engine lands)
+    [ ] 5.3.  One-line docstring + typed return so FastMCP auto-generates the
+              JSON schema (docstring = the tool description).
+    [ ] 5.4.  Keep it pure stdlib (platform, importlib.metadata) — no new deps.
+              (When the engine lands, info() should also report the bundled
+              GNU units database version it ships (§2.4) — but NOT in the
+              skeleton.)
+
+
+[ ] 6.  RUN & VERIFY
+    [ ] 6.1.  `uv sync` (or `uv pip install -e .[dev]`) into a venv.
+    [ ] 6.2.  Smoke-run: `uv run mcp-gnu-units` starts and blocks on stdio without
+              error.
+    [ ] 6.3.  Inspect with the MCP dev inspector
+              (`uv run mcp dev src/mcp_gnu_units/server.py`); confirm the single
+              `info` tool is listed with its schema. If the inspector is not
+              available on this computer, install it first (it ships with the
+              SDK's CLI extra, e.g. `uv add "mcp[cli]"` / ensure the `mcp` CLI +
+              Node-based Inspector are present), then run it.
+    [ ] 6.4.  ON THIS LOCAL COMPUTER: install + register the server at USER
+              scope so it is available in EVERY project (not just this repo) —
+              same model as the existing mcp-kodi / mcp-tmux / mcp-bytesmith
+              user-scoped servers.
+        [ ] 6.4.1.  Install so the `mcp-gnu-units` entry point is runnable outside
+                    this repo's venv (e.g. `uv tool install --editable .`, or
+                    register the command as `uv run --directory
+                    /home/pipas/projects/mcp-gnu-units mcp-gnu-units`).
+        [ ] 6.4.2.  Register user-scoped with Claude Code: `claude mcp add
+                    --scope user gnu-units -- <command from 6.4.1>` (or an
+                    equivalent user-scope .mcp.json entry). Use the `gnu-units`
+                    handle, not a bare `units` (too generic / clash-prone);
+                    matches the family's bare-noun convention (kodi, abacus,
+                    bytesmith, molecules, tmux).
+        [ ] 6.4.3.  Verify in a DIFFERENT project that the `info` tool is
+                    listed and returns the availability/version payload.
+
+
+[ ] 7.  UNIT TESTS (pytest; tests/ directory)
+    [ ] 7.1.  Configure pytest under [tool.pytest.ini_options] in
+              pyproject.toml: testpaths=["tests"]; set asyncio mode only if
+              pytest-asyncio is used (2.2.3).
+    [ ] 7.2.  tests/test_info.py — assert the `info` tool's return payload:
+        [ ] 7.2.1.  returns a dict; status == "available".
+        [ ] 7.2.2.  name == "mcp-gnu-units".
+        [ ] 7.2.3.  version is a non-empty string AND equals
+                    importlib.metadata.version("mcp-gnu-units").
+        [ ] 7.2.4.  python and mcp_sdk fields present + non-empty.
+        [ ] 7.2.5.  toolsets is a list (empty for now).
+    [ ] 7.3.  tests/test_server.py — prove the tool is wired into FastMCP, not
+              merely importable:
+        [ ] 7.3.1.  list the app's registered tools; assert EXACTLY ONE is
+                    exposed, named "info".
+        [ ] 7.3.2.  that tool has a non-empty description (the docstring) and
+                    a generated input schema.
+        [ ] 7.3.3.  invoke it through the app; payload matches 7.2 (end-to-end
+                    via the MCP layer).
+    [ ] 7.4.  tests/test_package.py — import / packaging smoke:
+        [ ] 7.4.1.  `import mcp_gnu_units` succeeds; `__version__` is defined and
+                    non-empty.
+        [ ] 7.4.2.  the editable/unbuilt version fallback (4.3) does not raise.
+    [ ] 7.5.  All tests run OFFLINE — no network, no runtime deps beyond `mcp`
+              + stdlib.
+    [ ] 7.6.  Once the tests above exist, RUN the suite: `uv run pytest` green.
+    [ ] 7.7.  (OPTIONAL) pytest-cov for coverage; not required for the
+              skeleton — add only if useful.
+
+
+[ ] 8.  CI (minimal; mirror the mcp-bytesmith / mcp-tmux setup)
+    [ ] 8.0.  REFERENCE: the mcp-bytesmith project lives at ../mcp-bytesmith/
+              (sibling of this repo). It is a SEPARATE project — treat it as
+              READ-ONLY: read its CI / publish config to copy the pattern, never
+              edit anything under it.
+    [ ] 8.1.  .github/workflows/ci.yml: on push/PR — set up uv, `uv sync`,
+              `uv run ruff check`, `uv run pytest`.
+    [ ] 8.2.  Pin action versions; run on a current Python (3.12+).
+    [ ] 8.3.  (LATER, not part of skeleton) PyPI publish workflow via Trusted
+              Publishing on git tag — reuse the mcp-bytesmith pattern.
+    [ ] 8.4.  Glama listing — add glama.json at repo root to claim ownership and
+              unblock scoring:
+                {"$schema": "https://glama.ai/mcp/schemas/server.json",
+                 "maintainers": ["laszlopere"]}
+              Then create a release on the Glama dashboard (build spec -> deploy
+              -> publish) to enable quality scoring — glama.json is the
+              ownership claim that grants maintainer access. See the
+              mcp-bytesmith TODO §8.4 for the exact Dockerfile build-spec gotcha
+              (`uv pip install --system --break-system-packages '.'`).
+
+
+[ ] 9.  DEFINITION OF DONE  (acceptance check)
+    [ ] 9.1.  `uv run mcp-gnu-units` launches a stdio MCP server with no errors.
+    [ ] 9.2.  A client lists EXACTLY ONE tool (`info`).
+    [ ] 9.3.  Calling it returns status "available" + correct name + a real
+              version string.
+    [ ] 9.4.  `uv run pytest` (section 7) and `uv run ruff check` both pass.
+    [ ] 9.5.  Commit the green skeleton; tag-free. Feature work starts after.
+
+
+--------------------------------------------------------------------------------
+PUBLISHING (do AFTER the FUTURE domain tools below are built + the server is
+feature-complete — you don't publish an info-only skeleton, and the description
+freezes at first index). ORDERING RULE threaded through 10-12: lock the FINAL
+DESCRIPTION (block at the very bottom) in pyproject + repo description BEFORE the
+repo is ever indexed by Glama — see §12.0.
+--------------------------------------------------------------------------------
+
+
+[ ] 10.  PUBLISH — PUBLIC GITHUB REPO + SPONSORSHIP
+    [ ] 10.1.  Create + push the PUBLIC GitHub repo `laszlopere/mcp-gnu-units`. The
+               homelab `origin` stays PRIVATE; the public `github` remote is what
+               PyPI/Glama/awesome read. Keep both in sync. The USER pushes the
+               default branch (agent pushes to main/master are blocked).
+    [ ] 10.2.  Repo metadata: `gh repo edit laszlopere/mcp-gnu-units --description
+               "<GitHub-repo form of the FINAL description>"` + set homepage.
+    [ ] 10.3.  Topics: `gh repo edit laszlopere/mcp-gnu-units --add-topic mcp
+               --add-topic model-context-protocol --add-topic mcp-server
+               --add-topic units --add-topic unit-conversion --add-topic
+               gnu-units --add-topic measurement`.
+               ⚠️ ORDERING: the `model-context-protocol` topic is what lets
+               Glama's crawler find + index the repo — and indexing FREEZES the
+               search description (§12.0). Do NOT add it until the FINAL
+               description is locked in pyproject + repo description. Niche topics
+               (units, gnu-units) rank far better than ~18k-repo `mcp-server`.
+    [ ] 10.4.  SPONSORSHIP — enable GitHub Sponsors:
+        [ ] 10.4.1.  Add `.github/FUNDING.yml` (copy the pattern from the sibling
+                     ../mcp-bytesmith/.github/FUNDING.yml — READ-ONLY, don't edit
+                     it) with the user's sponsor accounts (github: laszlopere,
+                     + any ko-fi/etc.). Renders the "Sponsor" button on the repo.
+        [ ] 10.4.2.  Ensure GitHub Sponsors is enabled at the account level so
+                     the button is live (one-time; USER action).
+    [ ] 10.5.  LICENSE (GPL-3.0-or-later) + README.md at repo root (from §1-2).
+        [ ] 10.5.1.  README OPENING — the intro paragraph (before any `##`
+                     heading) = the LONG-form FINAL description (bottom block).
+                     It is rendered verbatim as the Glama Overview body, so keep
+                     that searchable wording as the lead.
+        [ ] 10.5.2.  FIRST section = a HOMAGE to the original `units` package
+                     this server stands on. Credit GNU units (it supplies the
+                     unit database + conversion semantics), keep it a genuine
+                     "built on the shoulders of" note (not a disclaimer), and
+                     link where the original can be found:
+                       https://www.gnu.org/software/units/
+                     (Adrian Mariano / FSF; GPL-3.0-or-later — the same license we
+                     use, see the positioning header).
+        [ ] 10.5.3.  SPONSORSHIP section — add a short "Sponsorship" section
+                     containing the line "Sponsoring keeps this project alive"
+                     plus the GitHub Sponsors link/button (ties to §10.4 /
+                     .github/FUNDING.yml).
+    [ ] 10.6.  CHANGELOG.md at repo root (siblings carry one). Each release's
+               section is the source for the GitHub Release notes body — which
+               Glama copies VERBATIM as the release changelog (§12.2) — so author
+               it in the wording you want public. Also add a NOTICE file
+               attributing the bundled GNU units database (FSF, GPL-3.0-or-later,
+               §2.4) and reference it from README.
+
+
+[ ] 11.  PUBLISH — PyPI  (trusted publishing / OIDC — no stored tokens)
+    [ ] 11.0.  Mirror the mcp-abacus / mcp-bytesmith pattern exactly.
+    [ ] 11.1.  `.github/workflows/release.yml` — copy from ../mcp-bytesmith
+               (READ-ONLY): on a `v*` tag it `uv build`s, `twine check`s, then a
+               second job (`environment: pypi`, `permissions: id-token: write`)
+               runs `pypa/gh-action-pypi-publish`. Publishing = push a `vX.Y.Z`
+               tag.
+    [ ] 11.2.  ONE-TIME: register a PENDING trusted publisher on PyPI BEFORE the
+               first tag — USE THE EXISTING LOGGED-IN BROWSER SESSION to pypi.org
+               via the chrome-devtools MCP tools. pypi.org → Your account →
+               Publishing (/manage/account/publishing/). Sensitive action →
+               confirm password. Under "Add a new pending publisher" (GitHub tab)
+               fill EXACTLY to match release.yml:
+                 PyPI Project Name : mcp-gnu-units
+                 Owner             : laszlopere
+                 Repository name   : mcp-gnu-units
+                 Workflow name     : release.yml
+                 Environment name  : pypi   (must equal the publish job's
+                                             `environment:`)
+               → Add. `fill_form` the five fields + click Add; the `#errors` URL
+               hash is just an anchor — confirm by the row appearing under
+               "Pending publishers".
+    [ ] 11.3.  ORDER MATTERS: register the pending publisher BEFORE the publish
+               job runs, else it fails "OIDC: project does not have a trusted
+               publisher". If the tag predated the publisher, register then
+               `gh run rerun <id> --failed` (build artifact is reused).
+    [ ] 11.4.  Tag + verify: `git tag -a v0.1.0 -m "..." && git push github
+               v0.1.0`; then `curl -s https://pypi.org/pypi/mcp-gnu-units/json` → 200
+               with the version + both `.whl` and `.tar.gz`. Install check:
+               `uvx mcp-gnu-units`.
+    [ ] 11.5.  The PyPI SUMMARY = pyproject `description` = the FINAL description
+               (bottom block). Lock it before the first publish — it is also the
+               text Glama freezes (§12.0).
+
+
+[ ] 12.  PUBLISH — GLAMA LISTING (+ scoring)   ⚠️ DESCRIPTION FROZEN AT INDEX
+    [ ] 12.0.  ⚠️⚠️ READ FIRST — THE DESCRIPTION IS FINAL. Glama's search-card /
+               public-API description (the text that actually drives search) is
+               captured from the pyproject summary at FIRST INDEX and then
+               FROZEN. It is NOT self-serve editable afterward — the admin
+               "Profile Description" Save and repo Sync do NOT update it; only a
+               Glama re-index / Glama support can. Therefore the FINAL
+               description (bottom block) MUST already be in pyproject.toml + the
+               GitHub repo description BEFORE the repo is first indexed (i.e.
+               before adding the `model-context-protocol` topic in §10.3 and
+               before "Add Server"). Get it right once — there is no later fix.
+    [ ] 12.1.  glama.json — add at repo root EARLY (before submission) to claim
+               ownership + unlock maintainer controls:
+                 {"$schema": "https://glama.ai/mcp/schemas/server.json",
+                  "maintainers": ["laszlopere"]}
+    [ ] 12.2.  Publish a GitHub Release BEFORE submitting — a release present at
+               first index auto-enables scoring; a release added AFTER indexing
+               does NOT auto-trigger (you'd then have to build a release on the
+               Glama dashboard, §12.4). Author the GH Release notes in the desired
+               wording (they become the Glama release changelog verbatim).
+    [ ] 12.3.  Submit: glama.ai/mcp/servers → "Add Server" → fill Name +
+               Description + repo URL → Submit for Review (drive via
+               chrome-devtools MCP with the user's logged-in Glama session), OR
+               let the GitHub crawler pick it up via the `model-context-protocol`
+               topic. Submissions sit in a manual moderation queue (can take
+               days); nudge Glama Discord / support@glama.ai if stuck.
+    [ ] 12.4.  Create the Glama dashboard RELEASE to enable the quality grade
+               (.../admin/<server>/admin/dockerfile). Build spec for a PyPI/uv
+               server:
+                 Build steps   : ["uv pip install --system --break-system-packages ."]
+                 CMD arguments : ["mcp-gnu-units"]   (wraps to mcp-proxy -- mcp-gnu-units)
+                 Placeholder   : {}
+                 Base image    : debian:trixie-slim
+               (Engine is bundled pure-Python per §2.4 — NO apt step needed; the
+               definitions.units DB ships inside the wheel, so `uv pip install`
+               alone is sufficient. Confirm the build log shows the data file
+               packaged.)
+               ⚠️ PEP 668: `--break-system-packages` is REQUIRED (plain --system
+               hits Debian's externally-managed python, fails exit 2). After a
+               GH-Release Sync, RELOAD the page + check Recent Releases BEFORE
+               clicking Build & Release — Sync may have already auto-published;
+               clicking again mints a stray +1 patch you CANNOT delete (Glama has
+               no delete-release UI).
+    [ ] 12.5.  awesome-mcp-servers PR (highest inbound-link leverage): fork →
+               branch → append ONE entry (⚠️ ONE SERVER PER PR — strictly
+               enforced; the 🤖🤖🤖 fast-track does NOT exempt you) → PR titled
+               `Add laszlopere/mcp-gnu-units 🤖🤖🤖`. Entry format (badge right after
+               the repo link):
+                 - [laszlopere/mcp-gnu-units](https://github.com/laszlopere/mcp-gnu-units) [![mcp-gnu-units MCP server](https://glama.ai/mcp/servers/laszlopere/mcp-gnu-units/badges/score.svg)](https://glama.ai/mcp/servers/laszlopere/mcp-gnu-units) 🐍 🏠 🐧 - <one-line FINAL description>. `uvx mcp-gnu-units`.
+               Category: 🛠️ Command Line / utility. Bot gate `glama-badge-check`
+               wants the server ACTUALLY SCORED — satisfied once §12.4's grade
+               lands. Local fork clone convention: ~/projects/awesome-mcp-servers.
+
+
+[ ] 13.  PUBLISH — OFFICIAL MCP REGISTRY  (optional, do last)
+    [ ] 13.1.  registry.modelcontextprotocol.io — clean path for a PyPI server:
+               add a `server.json` (name, description, package = the PyPI dist
+               `mcp-gnu-units`) and publish with the `mcp-publisher` CLI
+               (authenticate via GitHub). Reuse the SAME final description.
+    [ ] 13.2.  Lower priority than §12 (awesome + Glama drive most discovery and
+               the downstream mirrors — mcp.so / PulseMCP / Smithery / lobehub —
+               auto-pick-up from those). Deferred across the sibling projects so
+               far; add here only once §11-12 are green.
+
+
+================================================================================
+THE FINAL DESCRIPTION  (searchable / discoverability-tuned — LOCK BEFORE INDEX)
+--------------------------------------------------------------------------------
+⚠️ Glama FREEZES the search description at first index (§12.0); the PyPI summary
+and the pyproject `description` are the SAME string. Use the PRIMARY line
+verbatim as pyproject.toml `description` AND `gh repo edit --description`; use the
+LONG form as the README first paragraph (becomes the Glama Overview body).
+
+Discoverability rule (the mcp-abacus lesson): LEAD with the words people actually
+SEARCH — "unit converter", "convert units", "unit conversion", "measurement" —
+not a clever phrase nobody types. THEN pack the distinctive, uncontested keywords
+("GNU units", "unit expression", "SI base units", "dimensional") + concrete
+category names. Stays consistent with the 5 shipped tools (convert,
+convert_to_si, find_units, define_unit, list_prefixes) — no currency, no
+conformable claims.
+
+PRIMARY  (pyproject `description` = PyPI summary = Glama FROZEN search text):
+  "Unit converter powered by the GNU units database — convert between 3000+
+   units of measurement, evaluate compound unit expressions, reduce quantities
+   to SI base units, and look up unit definitions. Offline and deterministic."
+
+GITHUB repo description  (shorter, same lead word):
+  "Unit conversion MCP server powered by the GNU units database: convert 3000+
+   units, evaluate unit expressions, reduce to SI base units. Offline."
+
+LONG  (README first paragraph = Glama Overview body):
+  "mcp-gnu-units is an MCP server that gives AI agents precise, offline unit
+   conversion backed by the GNU units database. Convert between 3000+ units of
+   measurement — length, mass, time, temperature, area, volume, energy, power,
+   pressure, speed, data and more — evaluate compound unit expressions like
+   `kW*h` or `acre*ft`, reduce any quantity to its SI base units, search the unit
+   database by keyword, and look up the exact definition of any unit, prefix, or
+   physical constant. Deterministic, dimension-aware, and free of the hardcoded
+   per-category unit tables every other converter ships."
+
+pyproject `keywords`:
+  ["units", "unit-conversion", "unit-converter", "convert", "measurement",
+   "gnu-units", "dimensional-analysis", "si-units", "metric", "imperial"]
+================================================================================
+
+
+================================================================================
+FUTURE (NOT PART OF THE SKELETON) — domain tool surface for the units engine
+--------------------------------------------------------------------------------
+Recorded from the 2026-06-19 Glama research so the plan isn't lost. Build these
+ONLY after section 9 is green. ~5 tools — leaner than the category leader's 15,
+but each far more powerful (one `convert` covers every category plus compound
+units), and unit-expression evaluation plus database search/define are
+capabilities NO competitor on Glama provides:
+
+  ENGINE (build FIRST — every tool depends on it): a pure-Python PARSER +
+  evaluator for the bundled definitions.units DB (§2.4). Parse base + derived
+  units, SI/binary prefixes, nonlinear units (tempC/tempF, dB) + piecewise defs,
+  and `!`/`!include` directives; reduce any expression to base dimensions; check
+  conformability internally; format output. VALIDATE it against real GNU `units`
+  outputs as a test oracle (golden tests below).
+
+  NUMERICS (§2.1.6): evaluate conversions in FIXED-POINT and report how many
+  decimals are actually needed, labelling each result exact vs inexact — the
+  mcp-abacus numeric model. Use stdlib only: `decimal.Decimal` +
+  `decimal.localcontext` (scale + per-op rounding/precision readout) and
+  `fractions.Fraction` for exact ratios; NO new dep. Re-implement our own core —
+  do NOT import/copy mcp-abacus code; ../mcp-abacus/src/mcp_abacus/expr/value.py
+  is a READ-ONLY reference for the exact/inexact + rounded-to-N-decimals verdict.
+
+  convert            Convert a value or unit expression from one unit to another
+                     (e.g. "2.5 acre*ft" -> gallons); universal core that
+                     replaces all per-category tools.
+  convert_to_si      Reduce a unit expression to SI base units / a magnitude
+                     (e.g. "kW*h" -> joules).
+  find_units         Search/grep the GNU units database by name or keyword.
+  define_unit        Show a unit / prefix / physical-constant definition,
+                     dimensionality, and base value.
+  list_prefixes      Enumerate SI / binary prefixes with their multipliers.
+  (info)             Extend the skeleton's info() to also report engine/database
+                     version.
+
+TESTS for the domain tools (extend §7): beyond the info-only skeleton tests, add
+GOLDEN conversion assertions that pin known answers (e.g. 1 mi -> 1.609344 km;
+0 degC -> 32 degF; 1 kW*h -> 3.6e6 J; an inconvertible pair errors cleanly) to
+catch parser regressions — ideally generated by diffing OUR parser's output
+against the real GNU `units` binary across a sample of the DB (oracle test; the
+binary is a DEV/test dependency only, never shipped or called at runtime).
+Per-tool + per-parameter descriptions also directly
+feed Glama's Tool-Definition-Quality grade, so write them richly ("schema
+coverage 0%" is the common ding).
+================================================================================
