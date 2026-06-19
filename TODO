@@ -121,23 +121,46 @@ search/definition lookup.
               claim is now unconditionally true), and we own the engine. Bonus:
               no subprocess ⇒ no shell-injection / file-include / `!`-define
               attack surface to defend.
-              OBLIGATIONS / NOTES:
-                - Ship the data at e.g. src/mcp_gnu_units/data/definitions.units
-                  and FORCE-INCLUDE it in the wheel (§3.5) — it is PACKAGE DATA,
-                  not importable code.
-                - PIN + record the upstream DB version shipped (e.g. GNU units
-                  2.27 definitions.units, 2026-04-01); surface it from info()
-                  (§5.4); document provenance in README.
-                - LICENSE: definitions.units is GPL-3.0-or-later © FSF — ship it
-                  VERBATIM with its copyright header intact, add a NOTICE crediting
-                  GNU units / the FSF, reference it from the README homage
-                  (§10.5.2). Our code is GPLv3 too ⇒ wholly compatible.
-                - The PARSER is its own real piece of work (FUTURE): the units
-                  grammar has base + derived units, SI/binary prefixes, nonlinear
-                  units (tempC/tempF, dB) defined via functions, piecewise defs,
-                  and `!`/`!include` directives. Scope + validate it there.
-                - Pure-Python ⇒ NO new runtime dep for the engine (json-repair
-                  from §2.1.5 stays the only extra).
+              OBLIGATIONS (checkable — flow from this decision):
+        [x] 2.4.1.  Ship the DB VERBATIM (copyright header intact) at
+                    src/mcp_gnu_units/data/definitions.units and force-include it
+                    in BOTH wheel + sdist (§3.5) — it is PACKAGE DATA, not
+                    importable code. DONE 2026-06-19 (commit 4f17938; verified in
+                    both artifacts, sha256 matches source).
+        [x] 2.4.2.  PIN + record the exact upstream version shipped — program +
+                    data version, date, and checksums — so "deterministic" is
+                    unconditionally true. DONE: GNU units 2.27, definitions.units
+                    data v3.26 (2026-02-25); pins + SHA-256s + GPG verdict live
+                    in NOTICE.
+        [x] 2.4.3.  Add a NOTICE file crediting GNU units / the FSF
+                    (GPL-3.0-or-later; our code is GPLv3 ⇒ wholly compatible),
+                    and ship it in wheel + sdist. DONE 2026-06-19 (commit
+                    c4126ed; ships via license-files + sdist include).
+        [x] 2.4.4.  Document the bundled-data provenance in README. DONE —
+                    "Bundled data & provenance" section, references NOTICE.
+        [ ] 2.4.5.  Reference the bundled DB from the README HOMAGE section too
+                    (the publish-time first-section homage to GNU units) —
+                    tracked with §10.5.2. The provenance section (2.4.4) exists
+                    now; the homage is still TODO.
+        [ ] 2.4.6.  Surface the bundled DB version from info() (§5.4): extend
+                    info() to report engine/database version. DEFERRED to engine
+                    work (no engine yet).
+        [x] 2.4.7.  Write the grammar/format spec for the DB language as the
+                    parser's contract. DONE 2026-06-19 — docs/definitions-format.md
+                    (EBNF + operator precedence incl. the juxtaposition-vs-`/`
+                    footgun + directive reference, pinned to data v3.26, grounded
+                    in the bundled file).
+        [ ] 2.4.8.  Build the pure-Python PARSER + evaluator per
+                    docs/definitions-format.md, validated against the units(1)
+                    binary as a test oracle. The units grammar has base + derived
+                    units, SI/binary prefixes, nonlinear units (tempC/tempF, dB)
+                    via functions, piecewise tables, and `!`/`!include`
+                    directives. The big FUTURE ENGINE work — see §13. Also load
+                    the DB at runtime via importlib.resources, NOT a relative
+                    path (§3.5).
+        [ ] 2.4.9.  INVARIANT to uphold during engine work: pure-Python ⇒ NO new
+                    runtime dependency (json-repair from §2.1.5 stays the only
+                    extra). Verify at engine-merge time.
 
 
 [x] 3.  pyproject.toml
