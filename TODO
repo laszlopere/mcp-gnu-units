@@ -43,7 +43,7 @@ search/definition lookup.
 ================================================================================
 
 
-[~] 1.  PROJECT SCAFFOLDING (src layout)
+[x] 1.  PROJECT SCAFFOLDING (src layout)
     [x] 1.1.  Create the package tree:
               src/mcp_gnu_units/__init__.py    (real content per §4.3)
               src/mcp_gnu_units/server.py      (GPL-header placeholder; fill §4-5)
@@ -53,15 +53,17 @@ search/definition lookup.
               LICENSE (GPL-3.0-or-later, copied verbatim from sibling),
               .gitignore (Python template, copied from sibling); TODO stays at
               repo root.
-    [~] 1.3.  Version control:
-        [~] 1.3.1.  `git init` DONE (branch master); first commit deferred until
-                    section 2 (pyproject) exists, per this line's own rule.
+    [x] 1.3.  Version control:
+        [x] 1.3.1.  `git init` DONE (branch master); first commit landed (7873d93,
+                    sections 1-3).
         [x] 1.3.2.  DONE — bare repo created on homelab "git" host at
-                    ~/mcp-gnu-units.git (HEAD -> master). PRIVATE server.
-        [~] 1.3.3.  origin remote ADDED: `git@git:mcp-gnu-units.git`. The
-                    `git push -u origin master` still PENDING the first commit
-                    (deferred to §1.3.1 — after section 2 exists).
-        [ ] 1.3.4.  Pushing to "git" is a PRIVATE upload to the local server
+                    /home/git/mcp-gnu-units.git (HEAD -> master). PRIVATE server.
+                    ⚠️ GOTCHA: the family repos live under the `git` USER
+                    (/home/git), reached via `git@git:` — NOT the bare `git` ssh
+                    host (which logs in as pipas -> /home/pipas). Use git@git.
+        [x] 1.3.3.  origin = `git@git:mcp-gnu-units.git`; `git push -u origin
+                    master` DONE (master tracks origin/master).
+        [x] 1.3.4.  Pushing to "git" is a PRIVATE upload to the local server
                     only — NOT public. (A public GitHub remote for CI is
                     separate; see section 8.)
     [x] 1.4.  Distribution name "mcp-gnu-units", import package name "mcp_gnu_units"
