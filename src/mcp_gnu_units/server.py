@@ -20,7 +20,9 @@ Transport is stdio (FastMCP default), which is what Claude Code / Desktop launch
 (TODO §4.4). No HTTP/SSE in the skeleton.
 """
 
+import platform
 from collections.abc import Sequence as AbcSequence
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -28,6 +30,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ContentBlock
 from pydantic import ValidationError
 
+from mcp_gnu_units import __version__
 from mcp_gnu_units.errors import format_validation_error
 
 
@@ -66,10 +69,34 @@ mcp = _GnuUnitsFastMCP(
 )
 
 # Tools register below.
-#
-# TODO §5 — the skeleton's one tool: `info()` (availability + version report).
-#           Register it here next.
-#
+
+
+@mcp.tool()
+def info() -> dict:
+    """Discovery / health-check entrypoint: report availability and version info.
+
+    Returns six keys: `status` ("available"), `name`, `version` (package version),
+    `python` (runtime version), `mcp_sdk` (MCP SDK version, or "unknown"), and
+    `toolsets` (empty until the GNU units engine lands).
+    Example: {"status":"available","name":"mcp-gnu-units","version":"0.0.1",
+    "python":"3.12.3","mcp_sdk":"1.28.0","toolsets":[]}
+    """
+    try:  # metadata may be absent (uninstalled SDK); never crash info()
+        mcp_sdk = version("mcp")
+    except PackageNotFoundError:
+        mcp_sdk = "unknown"
+    return {
+        "status": "available",
+        "name": "mcp-gnu-units",
+        "version": __version__,
+        "python": platform.python_version(),
+        "mcp_sdk": mcp_sdk,
+        "toolsets": [],  # placeholder; filled when the engine lands (§5.4 / §2.4)
+    }
+
+
 # TODO §4.5 / FUTURE — domain tools backed by the GNU units engine
 #           (convert, convert_to_si, find_units, define_unit, list_prefixes).
 #           Built only after section 9 is green; nothing registered here yet.
+#           When the engine lands, info() also reports the bundled GNU units
+#           database version it ships (§2.4 / §5.4).

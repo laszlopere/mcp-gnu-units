@@ -233,22 +233,17 @@ search/definition lookup.
               the interposer applied there too.
 
 
-[ ] 5.  THE ONE TOOL  (availability + version report)
-    [ ] 5.1.  In server.py add a single tool: `@mcp.tool()` on
-              `def info() -> dict: ...`.
-    [ ] 5.2.  Return a dict with at least:
-              status   = "available"
-              name     = "mcp-gnu-units"
-              version  = __version__ (from 4.3)
-              python   = platform.python_version()
-              mcp_sdk  = installed mcp SDK version (importlib.metadata)
-              toolsets = []   (placeholder; filled when the engine lands)
-    [ ] 5.3.  One-line docstring + typed return so FastMCP auto-generates the
-              JSON schema (docstring = the tool description).
-    [ ] 5.4.  Keep it pure stdlib (platform, importlib.metadata) — no new deps.
-              (When the engine lands, info() should also report the bundled
-              GNU units database version it ships (§2.4) — but NOT in the
-              skeleton.)
+[x] 5.  THE ONE TOOL  (availability + version report)
+    [x] 5.1.  server.py: single `@mcp.tool()` on `def info() -> dict`.
+    [x] 5.2.  Returns the six keys: status="available", name="mcp-gnu-units",
+              version=__version__ (0.0.1), python=platform.python_version(),
+              mcp_sdk=installed mcp version (or "unknown"), toolsets=[].
+              Verified through the MCP layer: exactly ONE tool exposed.
+    [x] 5.3.  Docstring + typed return -> FastMCP auto-generates the input
+              schema; description + schema confirmed present.
+    [x] 5.4.  Pure stdlib (platform, importlib.metadata) — no new deps. FUTURE:
+              info() also reports the bundled GNU units DB version once the
+              engine lands (§2.4); a comment in server.py marks that.
 
 
 [ ] 6.  RUN & VERIFY
