@@ -14,17 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Pure-function tests for the tolerant argument-repair fallback (TODO §4.6.5).
+"""Tests for the tolerant argument-repair fallback (TODO §4.6.5 / §7).
 
-These cover `repair_arguments` (each offender + the garbage-guard) and the
-`process_incoming` message router (repair / forward / parse-error reply). The
-raw-stdio end-to-end test that sends a STRING `arguments` blob to a real tool is
-DEFERRED to §7: it needs a registered tool to call, which arrives with the
-`info` tool in §5.
+Two layers: pure-function unit tests of `repair_arguments` / `process_incoming`,
+and a raw-protocol end-to-end test over a real subprocess that proves a
+`tools/call` whose `arguments` arrive as a STRING is repaired and run, or — when
+unparseable — answered with an actionable JSON-RPC parse error. The e2e calls
+the only registered tool, `info` (no required arguments).
 """
 
+import json
+import select
+import subprocess
+import sys
+
+import pytest
 from mcp.shared.message import SessionMessage
 from mcp.types import (
+    LATEST_PROTOCOL_VERSION,
     PARSE_ERROR,
     JSONRPCMessage,
     JSONRPCRequest,
@@ -110,3 +117,98 @@ def test_unparseable_string_arguments_yield_a_parse_error_reply():
     assert error.code == PARSE_ERROR
     assert error.message.lower().count("json") >= 1
     assert "object" in error.message  # tells the model to send an object
+
+
+# --- raw-protocol end-to-end: the honest proof (§4.6.5) ----------------------
+
+
+class _RawStdioServer:
+    """A subprocess speaking newline-delimited JSON-RPC over stdio."""
+
+    def __init__(self) -> None:
+        self.proc = subprocess.Popen(
+            [sys.executable, "-m", "mcp_gnu_units"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+
+    def send(self, obj: dict) -> None:
+        assert self.proc.stdin is not None
+        self.proc.stdin.write(json.dumps(obj) + "\n")
+        self.proc.stdin.flush()
+
+    def recv(self, timeout: float = 10.0) -> dict:
+        assert self.proc.stdout is not None
+        ready, _, _ = select.select([self.proc.stdout], [], [], timeout)
+        if not ready:
+            raise TimeoutError("no JSON-RPC line within timeout")
+        return json.loads(self.proc.stdout.readline())
+
+    def recv_id(self, want_id: int, timeout: float = 10.0) -> dict:
+        while True:
+            msg = self.recv(timeout)
+            if msg.get("id") == want_id:
+                return msg
+
+    def close(self) -> None:
+        self.proc.terminate()
+        self.proc.wait(timeout=5)
+
+
+@pytest.fixture
+def raw_server():
+    server = _RawStdioServer()
+    server.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": LATEST_PROTOCOL_VERSION,
+                "capabilities": {},
+                "clientInfo": {"name": "test", "version": "0"},
+            },
+        }
+    )
+    server.recv_id(1)
+    server.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+    try:
+        yield server
+    finally:
+        server.close()
+
+
+def _call(raw_server, call_id, name, arguments):
+    raw_server.send(
+        {
+            "jsonrpc": "2.0",
+            "id": call_id,
+            "method": "tools/call",
+            "params": {"name": name, "arguments": arguments},
+        }
+    )
+    return raw_server.recv_id(call_id)
+
+
+def test_stringified_arguments_run_end_to_end(raw_server):
+    # The arguments double-encoded as a STRING, with single quotes and a trailing
+    # comma -- rejected outright without the repair interposer. Repaired to an
+    # object and `info` runs (it ignores the extra key).
+    msg = _call(raw_server, 2, "info", "{'unused': 'x',}")
+    result = msg["result"]
+    assert result["isError"] is False
+    payload = json.loads(result["content"][0]["text"])
+    assert payload["status"] == "available"
+    assert payload["name"] == "mcp-gnu-units"
+
+
+def test_unparseable_arguments_get_actionable_parse_error(raw_server):
+    # A string that cannot be parsed into an object -> actionable -32700, not the
+    # SDK's bare "Invalid request parameters".
+    msg = _call(raw_server, 2, "info", "{bad json")
+    assert "result" not in msg
+    error = msg["error"]
+    assert error["code"] == PARSE_ERROR
+    assert "JSON object" in error["message"]

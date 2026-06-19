@@ -174,7 +174,7 @@ search/definition lookup.
     [x] 3.6.  ruff config (line length 100, target-version py310) under [tool.ruff].
 
 
-[~] 4.  ARCHITECTURE / WIRING
+[x] 4.  ARCHITECTURE / WIRING
     [x] 4.1.  server.py: singleton app built as `mcp = _GnuUnitsFastMCP(...)`
               (the FIX-B subclass, §4.6.3) with the §4.1 instructions string.
     [x] 4.2.  __main__.py: `main()` runs the stdio interposer (anyio runner, not
@@ -189,7 +189,7 @@ search/definition lookup.
     [x] 4.5.  Marked spots in server.py: §5 (info tool) + §4.5/FUTURE domain
               tools (convert/convert_to_si/find_units/define_unit/list_prefixes)
               — comments only, nothing built.
-    [~] 4.6.  LLM-MANGLED-JSON TOLERANCE — make tool calls survive the broken
+    [x] 4.6.  LLM-MANGLED-JSON TOLERANCE — make tool calls survive the broken
               JSON LLMs sometimes emit (stringified/double-encoded args, single
               quotes, trailing commas, barewords). Two failure layers → two
               fixes. SHORT step-by-step below; the FULL rationale + code is in the
@@ -221,12 +221,11 @@ search/definition lookup.
         [x] 4.6.4.  When repair still can't produce an object, the interposer
                     answers FROM itself with an actionable -32700 parse error
                     (jsonfix._parse_error_reply). Runtime-verified over stdio.
-        [~] 4.6.5.  TESTS — pure-fn tests DONE (tests/test_jsonfix.py: each
-                    offender + garbage-guard + router; tests/test_errors.py:
-                    expected-vs-received + no pydantic URL); 16 tests green.
-                    The raw-stdio END-TO-END test is DEFERRED to §7 — it needs a
-                    registered tool to call, which lands with `info` in §5.
-                    (Interim runtime smoke already exercised the -32700 path.)
+        [x] 4.6.5.  TESTS — pure-fn tests (tests/test_jsonfix.py: each offender +
+                    garbage-guard + router; tests/test_errors.py: expected-vs-
+                    received + no pydantic URL) AND the raw-stdio END-TO-END test
+                    (done in §7 once `info` existed: stringified args repaired &
+                    run; unparseable -> actionable -32700). All green.
               SCOPE: behaviourless for well-formed input, so wire it WITH the
               skeleton; its payoff shows once the FUTURE domain tools take real
               arguments. Non-stdio transports (none in the skeleton) would need
@@ -274,34 +273,27 @@ search/definition lookup.
                     listed and returns the availability/version payload.
 
 
-[ ] 7.  UNIT TESTS (pytest; tests/ directory)
-    [ ] 7.1.  Configure pytest under [tool.pytest.ini_options] in
-              pyproject.toml: testpaths=["tests"]; set asyncio mode only if
-              pytest-asyncio is used (2.2.3).
-    [ ] 7.2.  tests/test_info.py — assert the `info` tool's return payload:
-        [ ] 7.2.1.  returns a dict; status == "available".
-        [ ] 7.2.2.  name == "mcp-gnu-units".
-        [ ] 7.2.3.  version is a non-empty string AND equals
-                    importlib.metadata.version("mcp-gnu-units").
-        [ ] 7.2.4.  python and mcp_sdk fields present + non-empty.
-        [ ] 7.2.5.  toolsets is a list (empty for now).
-    [ ] 7.3.  tests/test_server.py — prove the tool is wired into FastMCP, not
-              merely importable:
-        [ ] 7.3.1.  list the app's registered tools; assert EXACTLY ONE is
-                    exposed, named "info".
-        [ ] 7.3.2.  that tool has a non-empty description (the docstring) and
-                    a generated input schema.
-        [ ] 7.3.3.  invoke it through the app; payload matches 7.2 (end-to-end
-                    via the MCP layer).
-    [ ] 7.4.  tests/test_package.py — import / packaging smoke:
-        [ ] 7.4.1.  `import mcp_gnu_units` succeeds; `__version__` is defined and
-                    non-empty.
-        [ ] 7.4.2.  the editable/unbuilt version fallback (4.3) does not raise.
-    [ ] 7.5.  All tests run OFFLINE — no network, no runtime deps beyond `mcp`
-              + stdlib.
-    [ ] 7.6.  Once the tests above exist, RUN the suite: `uv run pytest` green.
-    [ ] 7.7.  (OPTIONAL) pytest-cov for coverage; not required for the
-              skeleton — add only if useful.
+[x] 7.  UNIT TESTS (pytest; tests/ directory)
+    [x] 7.1.  pytest configured (testpaths=["tests"]); NO asyncio mode — async
+              tools are driven via asyncio.run() in sync tests, so pytest-asyncio
+              is not needed (§2.2.3).
+    [x] 7.2.  tests/test_info.py — info payload asserted (dict; status, name,
+              version==metadata, python+mcp_sdk present, toolsets==[]). 7.2.1-7.2.5.
+    [x] 7.3.  tests/test_server.py — tool wired into FastMCP:
+        [x] 7.3.1.  EXACTLY ONE tool exposed, named "info".
+        [x] 7.3.2.  non-empty description + generated object input schema.
+        [x] 7.3.3.  invoked through the MCP layer; payload matches §7.2. Plus a
+                    guard that info() survives missing `mcp` SDK metadata.
+    [x] 7.4.  tests/test_package.py — import smoke + version fallback:
+        [x] 7.4.1.  `import mcp_gnu_units` ok; `__version__` non-empty.
+        [x] 7.4.2.  editable/unbuilt fallback (§4.3) yields "0.0.0+unknown",
+                    no raise.
+    [x] 7.5.  All tests OFFLINE — no network (subprocess uses stdio pipes), no
+              runtime deps beyond mcp + json-repair + stdlib.
+    [x] 7.6.  Suite green: `uv run pytest` -> 29 passed (ruff + mypy clean too).
+              Includes the §4.6.5 raw-stdio e2e (stringified args repaired & run;
+              unparseable -> -32700) now that `info` exists to call.
+    [ ] 7.7.  (OPTIONAL) pytest-cov — not added; skeleton doesn't require it.
 
 
 [ ] 8.  CI (minimal; mirror the mcp-bytesmith / mcp-tmux setup)

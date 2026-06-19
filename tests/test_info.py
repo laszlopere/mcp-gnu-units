@@ -14,4 +14,42 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Tests for the info tool payload. TODO §7.2 — fill in once §5 lands."""
+"""§7.2 — assert the `info` tool's return payload (called directly)."""
+
+from importlib.metadata import version
+
+from mcp_gnu_units.server import info
+
+
+def test_info_returns_dict_and_is_available():
+    # §7.2.1 — returns a dict; status == "available".
+    payload = info()
+    assert isinstance(payload, dict)
+    assert payload["status"] == "available"
+
+
+def test_info_name():
+    # §7.2.2 — name == "mcp-gnu-units".
+    assert info()["name"] == "mcp-gnu-units"
+
+
+def test_info_version_matches_metadata():
+    # §7.2.3 — version is a non-empty string AND matches package metadata.
+    payload = info()
+    assert isinstance(payload["version"], str)
+    assert payload["version"]
+    assert payload["version"] == version("mcp-gnu-units")
+
+
+def test_info_python_and_mcp_sdk_present():
+    # §7.2.4 — python and mcp_sdk fields present + non-empty.
+    payload = info()
+    assert isinstance(payload["python"], str) and payload["python"]
+    assert isinstance(payload["mcp_sdk"], str) and payload["mcp_sdk"]
+
+
+def test_info_toolsets_is_empty_list():
+    # §7.2.5 — toolsets is a list (empty until the engine lands).
+    payload = info()
+    assert isinstance(payload["toolsets"], list)
+    assert payload["toolsets"] == []
