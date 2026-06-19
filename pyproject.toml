@@ -43,7 +43,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.11"]
+dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.11", "mcp[cli]>=1.2"]
 
 [project.scripts]
 mcp-gnu-units = "mcp_gnu_units.__main__:main"

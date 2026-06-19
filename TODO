@@ -245,32 +245,28 @@ search/definition lookup.
               engine lands (§2.4); a comment in server.py marks that.
 
 
-[ ] 6.  RUN & VERIFY
-    [ ] 6.1.  `uv sync` (or `uv pip install -e .[dev]`) into a venv.
-    [ ] 6.2.  Smoke-run: `uv run mcp-gnu-units` starts and blocks on stdio without
-              error.
-    [ ] 6.3.  Inspect with the MCP dev inspector
-              (`uv run mcp dev src/mcp_gnu_units/server.py`); confirm the single
-              `info` tool is listed with its schema. If the inspector is not
-              available on this computer, install it first (it ships with the
-              SDK's CLI extra, e.g. `uv add "mcp[cli]"` / ensure the `mcp` CLI +
-              Node-based Inspector are present), then run it.
-    [ ] 6.4.  ON THIS LOCAL COMPUTER: install + register the server at USER
-              scope so it is available in EVERY project (not just this repo) —
-              same model as the existing mcp-kodi / mcp-tmux / mcp-bytesmith
-              user-scoped servers.
-        [ ] 6.4.1.  Install so the `mcp-gnu-units` entry point is runnable outside
-                    this repo's venv (e.g. `uv tool install --editable .`, or
-                    register the command as `uv run --directory
-                    /home/pipas/projects/mcp-gnu-units mcp-gnu-units`).
-        [ ] 6.4.2.  Register user-scoped with Claude Code: `claude mcp add
-                    --scope user gnu-units -- <command from 6.4.1>` (or an
-                    equivalent user-scope .mcp.json entry). Use the `gnu-units`
-                    handle, not a bare `units` (too generic / clash-prone);
-                    matches the family's bare-noun convention (kodi, abacus,
-                    bytesmith, molecules, tmux).
-        [ ] 6.4.3.  Verify in a DIFFERENT project that the `info` tool is
-                    listed and returns the availability/version payload.
+[x] 6.  RUN & VERIFY
+    [x] 6.1.  `uv sync --extra dev` — DONE (47 packages resolved, env up to date).
+    [x] 6.2.  Smoke-run: `mcp-gnu-units` starts, blocks on stdio, answers the
+              initialize handshake with serverInfo + instructions, no stderr. DONE.
+    [x] 6.3.  Inspector: installed the SDK CLI extra (added `mcp[cli]>=1.2` to the
+              dev deps; `mcp version` -> 1.28.0; node/npx present for the Node
+              Inspector). The browser Inspector UI can't be driven headlessly, so
+              verified its SUBSTANCE over raw stdio (tools/list): EXACTLY ONE tool
+              `info`, with description + generated object inputSchema, and
+              tools/call returns the full availability/version payload. DONE.
+    [x] 6.4.  Installed + registered at USER scope (available in EVERY project),
+              same model as the sibling mcp-* servers.
+        [x] 6.4.1.  `uv tool install --editable .` -> entry point at
+                    /home/pipas/.local/bin/mcp-gnu-units (matches the family
+                    convention used by mcp-bytesmith/-abacus/-molecules/-tmux).
+        [x] 6.4.2.  `claude mcp add --scope user gnu-units -- mcp-gnu-units` ->
+                    written to ~/.claude.json, Status: ✔ Connected. Used the
+                    `gnu-units` handle per the bare-noun convention.
+        [x] 6.4.3.  Verified from a DIFFERENT project (../mcp-abacus): user scope,
+                    ✔ Connected, single `info` tool listed, returns
+                    {status:"available", name, version 0.0.1, python, mcp_sdk,
+                    toolsets:[]}. Proven independent of this repo's venv.
 
 
 [x] 7.  UNIT TESTS (pytest; tests/ directory)
