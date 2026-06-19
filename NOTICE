@@ -1,0 +1,36 @@
+mcp-gnu-units
+Copyright (C) 2026 László Pere
+Licensed under the GNU General Public License v3.0-or-later; see LICENSE.
+
+================================================================================
+Bundled third-party data: the GNU units database
+================================================================================
+
+This distribution bundles, verbatim, the units database that ships with
+GNU units, a units-conversion program by Adrian Mariano <adrianm@gnu.org>:
+
+    src/mcp_gnu_units/data/definitions.units
+
+  Upstream project : GNU units — https://www.gnu.org/software/units/
+  Source tarball   : https://ftp.gnu.org/gnu/units/units-2.27.tar.gz
+  Program version  : GNU units 2.27 (released 2026-03-31)
+  Data version     : definitions.units 3.26 (last updated 2026-02-25)
+  Copyright        : (C) 1996-2002, 2004-2020, 2022, 2024, 2026
+                     Free Software Foundation, Inc.
+  License          : GPL-3.0-or-later — the same license as this project,
+                     so the two are wholly compatible.
+
+The file is shipped unmodified, with its original copyright header intact.
+Its content is reproduced solely as data for conversion and dimensional
+analysis; the conversion engine in this project is an independent
+implementation and is not part of GNU units.
+
+Integrity of the bundled copy (as fetched and verified on 2026-06-19):
+
+  Tarball SHA-256 : e1bbdb09672e7c08eee986749e7a1629eb84a6bdf41f5a2a79d6804444abbe10
+  Data    SHA-256 : 18b47992d3049818e09abedbbc7ef8358ff2944cbac82d0460eb78666db83600
+  GPG signature   : Good signature from Adrian Mariano <avm4@cornell.edu>,
+                    key 927D02FA 733C3D90 2D21CAC0 2D649F2B 7B4C8179
+
+To obtain the complete corresponding source of GNU units, including the
+unmodified database, see the upstream project and tarball linked above.

@@ -15,8 +15,24 @@ conversion and dimensional analysis backed by the GNU units database.
 
 Distribution name: `mcp-gnu-units` · import package: `mcp_gnu_units`.
 
+## Bundled data & provenance
+
+This server stands on [GNU units](https://www.gnu.org/software/units/), Adrian
+Mariano's units-conversion program, by bundling its unit database verbatim at
+`src/mcp_gnu_units/data/definitions.units`. The conversion engine here is an
+independent implementation; GNU units supplies the data.
+
+- **Source:** GNU units 2.27 ([tarball](https://ftp.gnu.org/gnu/units/units-2.27.tar.gz)),
+  `definitions.units` data version 3.26 (2026-02-25).
+- **License:** GPL-3.0-or-later © Free Software Foundation — the same license as
+  this project, so the two are wholly compatible.
+- **Integrity:** the upstream tarball was GPG-verified (good signature from
+  Adrian Mariano) before the file was vendored.
+
+Full attribution, version pins, and checksums are recorded in
+[`NOTICE`](NOTICE).
+
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE). The bundled GNU units database
-(`definitions.units`) is GPL-3.0-or-later © Free Software Foundation; its
-provenance and attribution are documented at engine-build time (TODO §2.4).
+GPL-3.0-or-later. See [LICENSE](LICENSE). The bundled GNU units database is
+also GPL-3.0-or-later © Free Software Foundation; see [`NOTICE`](NOTICE).

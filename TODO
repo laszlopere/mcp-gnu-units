@@ -374,12 +374,15 @@ repo is ever indexed by Glama — see §12.0.
                      containing the line "Sponsoring keeps this project alive"
                      plus the GitHub Sponsors link/button (ties to §10.4 /
                      .github/FUNDING.yml).
-    [ ] 10.6.  CHANGELOG.md at repo root (siblings carry one). Each release's
+    [~] 10.6.  CHANGELOG.md at repo root (siblings carry one). Each release's
                section is the source for the GitHub Release notes body — which
                Glama copies VERBATIM as the release changelog (§12.2) — so author
-               it in the wording you want public. Also add a NOTICE file
-               attributing the bundled GNU units database (FSF, GPL-3.0-or-later,
-               §2.4) and reference it from README.
+               it in the wording you want public. CHANGELOG STILL TODO.
+               NOTICE DONE (2026-06-19): NOTICE file at repo root attributes the
+               bundled GNU units database (FSF, GPL-3.0-or-later, §2.4) with
+               version pins + checksums; ships in wheel (dist-info/licenses/) and
+               sdist via license-files + sdist include; referenced from a README
+               "Bundled data & provenance" section.
 
 
 [ ] 11.  PUBLISH — PyPI  (trusted publishing / OIDC — no stored tokens)
