@@ -174,26 +174,22 @@ search/definition lookup.
     [x] 3.6.  ruff config (line length 100, target-version py310) under [tool.ruff].
 
 
-[ ] 4.  ARCHITECTURE / WIRING
-    [ ] 4.1.  server.py: construct the singleton FastMCP app —
-              `mcp = FastMCP("mcp-gnu-units", instructions=...)`. All tools register
-              here. Instructions string (server-level usage hint):
-              "Precise, offline unit conversion and dimensional analysis backed
-              by the GNU units database: convert between 3000+ units, evaluate
-              compound unit expressions, and search/define units. Deterministic
-              and local."
-    [ ] 4.2.  __main__.py: `def main(): mcp.run()` (stdio is default) and the
-              `if __name__ == "__main__": main()` guard. Import the app from
-              server.py so tools register on import.
+[~] 4.  ARCHITECTURE / WIRING
+    [x] 4.1.  server.py: singleton app built as `mcp = _GnuUnitsFastMCP(...)`
+              (the FIX-B subclass, §4.6.3) with the §4.1 instructions string.
+    [x] 4.2.  __main__.py: `main()` runs the stdio interposer (anyio runner, not
+              bare mcp.run(), per §4.6.2) + `if __name__ == "__main__"` guard;
+              imports the app from server.py so tools register on import.
+              Runtime smoke: initialize handshake passes through the interposer.
     [x] 4.3.  __init__.py: expose `__version__` via
               importlib.metadata.version("mcp-gnu-units"), with a fallback for the
               editable/unbuilt case. (Done during §1 scaffolding; verified
               resolving to 0.0.1.)
-    [ ] 4.4.  Transport = stdio (what Claude Code/Desktop launch). No HTTP/SSE
-              in the skeleton.
-    [ ] 4.5.  Leave a marked spot in server.py for FUTURE domain-tool
-              registration (the units engine) — comment only, not built.
-    [ ] 4.6.  LLM-MANGLED-JSON TOLERANCE — make tool calls survive the broken
+    [x] 4.4.  Transport = stdio (FastMCP default via stdio_server). No HTTP/SSE.
+    [x] 4.5.  Marked spots in server.py: §5 (info tool) + §4.5/FUTURE domain
+              tools (convert/convert_to_si/find_units/define_unit/list_prefixes)
+              — comments only, nothing built.
+    [~] 4.6.  LLM-MANGLED-JSON TOLERANCE — make tool calls survive the broken
               JSON LLMs sometimes emit (stringified/double-encoded args, single
               quotes, trailing commas, barewords). Two failure layers → two
               fixes. SHORT step-by-step below; the FULL rationale + code is in the
@@ -203,8 +199,8 @@ search/definition lookup.
                                    jsonfix.py + errors.py, the _BytesmithFastMCP
                                    subclass in server.py, the stdio interposer in
                                    __main__.py. (READ-ONLY sibling; don't edit.)
-        [ ] 4.6.1.  Add the `json-repair` runtime dep (§2.1.5 / §3.2).
-        [ ] 4.6.2.  FIX A — stringified args (the #1 offender) die at the
+        [x] 4.6.1.  Add the `json-repair` runtime dep (§2.1.5 / §3.2).
+        [x] 4.6.2.  FIX A — stringified args (the #1 offender) die at the
                     session's STRICT validation BEFORE any tool hook, so they
                     can't be caught in a tool. Repair them in a STDIO STREAM
                     INTERPOSER: replace mcp.run() (§4.2) with an anyio runner that
@@ -212,22 +208,25 @@ search/definition lookup.
                     JSONRPCRequest.params. Put the repair fn in a new jsonfix.py;
                     GUARD isinstance(parsed, dict) and hand the ORIGINAL back on
                     failure (json-repair never raises — it coerces junk to ""/{} ).
-        [ ] 4.6.3.  FIX B — well-formed-but-wrong-shape args die later in
+                    Implemented in jsonfix.py (repair_arguments + process_incoming);
+                    interposer wired in __main__.py.
+        [x] 4.6.3.  FIX B — well-formed-but-wrong-shape args die later in
                     FastMCP's per-tool pydantic validation. Subclass FastMCP and
                     override call_tool to reshape the ValidationError (its
                     __cause__) into a one-line, field-naming, expected-vs-received
                     message in a new errors.py; leave tool-body errors untouched.
                     The subclass INSTANCE is the app (mcp = _GnuUnitsFastMCP(...),
-                    §4.1).
-        [ ] 4.6.4.  (optional) When repair still can't produce an object, answer
-                    the request FROM the interposer with an actionable JSON-RPC
-                    -32700 parse error (don't forward it) instead of the SDK's
-                    bare -32602.
-        [ ] 4.6.5.  TESTS (§7): unit-test the pure fns (each offender; the
-                    garbage-guard; expected-vs-received phrasing; no pydantic
-                    URL), plus ONE raw-stdio end-to-end sending a STRING
-                    `arguments` blob (the typed ClientSession can't emit malformed
-                    args — it serializes a dict — so speak raw JSON-RPC).
+                    §4.1). Implemented in errors.py (format_validation_error) +
+                    the _GnuUnitsFastMCP.call_tool override in server.py.
+        [x] 4.6.4.  When repair still can't produce an object, the interposer
+                    answers FROM itself with an actionable -32700 parse error
+                    (jsonfix._parse_error_reply). Runtime-verified over stdio.
+        [~] 4.6.5.  TESTS — pure-fn tests DONE (tests/test_jsonfix.py: each
+                    offender + garbage-guard + router; tests/test_errors.py:
+                    expected-vs-received + no pydantic URL); 16 tests green.
+                    The raw-stdio END-TO-END test is DEFERRED to §7 — it needs a
+                    registered tool to call, which lands with `info` in §5.
+                    (Interim runtime smoke already exercised the -32700 path.)
               SCOPE: behaviourless for well-formed input, so wire it WITH the
               skeleton; its payoff shows once the FUTURE domain tools take real
               arguments. Non-stdio transports (none in the skeleton) would need
