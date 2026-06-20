@@ -687,35 +687,50 @@ coverage 0%" is the common ding).
     nested JSON object, so the AI can read a function's domain or a table's
     points without re-parsing the definition string. Additive and best-effort:
     plain units are unchanged, and the raw `definition` stays for provenance.
-    [ ] 15.1.  FUNCTIONS. When kind == "function", attach a `function` object
-               built from symbols.functions[name] (FunctionUnit). Two tiers:
-               TIER 1 (dimension parity with §14.2 — cheap, no AST rendering):
-                 - `signature`         : one-line "name(params) -> outdim", e.g.
-                                         "tempF(x) -> K"; outdim omitted/"?" when
-                                         units_out is None (windchill).
-                 - `input_dimensions`  : per-param base dimension, each units_in
-                                         Expr reduced via evaluator.reduce_expr +
-                                         _format_dimension (dimensionless -> "1";
-                                         mph -> "m / s").
-                 - `output_dimension`  : units_out reduced the same way, or null
-                                         when undeclared.
-               TIER 2 (full structure):
-                 - `params`            : the parameter-name tuple.
-                 - `domain` / `range`  : each Interval as {lo, hi, lo_closed,
-                                         hi_closed}; omit when None.
-                 - `invertible`        : inverse is not None.
-                 - `noerror`           : the flag.
-                 - `forward`/`inverse` : readable source, NOT the raw Expr AST.
-                                         Route (a): have parse_function_def retain
-                                         the body substring (everything after the
-                                         units=/domain=/range=/noerror header),
-                                         split on ";", collapse whitespace runs.
-                                         (Route (b), an Expr->source unparser, is
-                                         a later nicety.)
-               Omit None/empty fields (e.g. dB has no params/units/domain).
-               Tests: tempF (input "1" -> "K", domain=[-459.67,), invertible),
-               windchill (two-param, input ["K","m / s"], output null, not
-               invertible), dB (near-empty object).
+    [~] 15.1.  FUNCTIONS. When kind == "function", attach a `function` object
+               built from symbols.functions[name] (FunctionUnit). Built in the
+               tiers below; omit None/empty fields throughout (e.g. dB has no
+               params/units/domain). Tests: tempF (input "1" -> "K",
+               domain=[-459.67,), invertible), windchill (two-param, input
+               ["K","m / s"], output null, not invertible), dB (near-empty).
+        [x] 15.1.1.  TIER 1 — signature + in/out dimensions (parity with §14.2;
+                     cheap, no AST rendering). DONE 2026-06-20.
+                       - `signature`        : "name(params) -> outdim", e.g.
+                                              "tempF(x) -> K"; "?" when units_out
+                                              is None (windchill).
+                       - `input_dimensions` : per-param base dim, each units_in
+                                              Expr reduced via reduce_expr +
+                                              _format_dimension ("1"; "m / s").
+                       - `output_dimension` : units_out reduced the same way, or
+                                              null when undeclared.
+                     Impl: Database._function_info / _reduce_dim (convert.py),
+                     describe() return widened to dict[str, object]. Test:
+                     test_describe_function_tier1_signature_and_dims. Commit
+                     c46448f. 102 tests pass; ruff + mypy clean.
+        [ ] 15.1.2.  TIER 2 — full structure.
+                       - `params`           : the parameter-name tuple.
+                       - `domain` / `range` : each Interval as {lo, hi,
+                                              lo_closed, hi_closed}; omit None.
+                       - `invertible`       : inverse is not None.
+                       - `noerror`          : the flag.
+                       - `forward`/`inverse`: readable source, NOT the raw Expr
+                                              AST. Route (a): parse_function_def
+                                              retains the body substring (after
+                                              the units=/domain=/range=/noerror
+                                              header), split on ";", collapse
+                                              whitespace runs. (Route (b), an
+                                              Expr->source unparser, is a later
+                                              nicety.)
+        [ ] 15.1.3.  ALIAS INHERITANCE. A zero-arg function alias whose forward
+                     is a bare reference to another function (e.g.
+                     "tempfahrenheit() tempF", "swg() brwiregauge") declares no
+                     units=/params of its own, so tiers 1-2 report an unhelpful
+                     "() -> ?" with no dims. When forward is a lone reference to
+                     a known function (or table), inherit that target's
+                     signature / input_dimensions / output_dimension, resolving
+                     transitively — same idea as plain-unit aliases that chain
+                     hp -> horsepower. Test: tempfahrenheit inherits tempF's
+                     "(x) -> K".
     [ ] 15.2.  TABLES. When kind == "table", attach a `table` object built from
                symbols.tables[name] (PiecewiseTable): `out_unit` (rendered),
                `out_dimension` (out_unit reduced via _format_dimension),
