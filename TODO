@@ -574,8 +574,6 @@ pyproject `keywords`:
 
 
 ================================================================================
-FUTURE (NOT PART OF THE SKELETON) — domain tool surface for the units engine
---------------------------------------------------------------------------------
 Recorded from the 2026-06-19 Glama research so the plan isn't lost. Build these
 ONLY after section 9 is green. ~5 tools — leaner than the category leader's 15,
 but each far more powerful (one `convert` covers every category plus compound
@@ -619,3 +617,28 @@ Per-tool + per-parameter descriptions also directly
 feed Glama's Tool-Definition-Quality grade, so write them richly ("schema
 coverage 0%" is the common ding).
 ================================================================================
+
+
+[~] 14.  TOOL — find_units  (search the GNU units database by keyword)
+    --------------------------------------------------------------------------
+    Register the first of the five FUTURE domain tools (§13) as an actual MCP
+    tool, on top of the engine's already-built Database.find_units()
+    (src/mcp_gnu_units/engine/convert.py:113, reached via
+    engine.get_database()). Wire it into server.py beside info() (§4.5/§5) on
+    the same FastMCP app. Per-tool + per-parameter descriptions must be rich —
+    they feed Glama's Tool-Definition-Quality grade (§13).
+    [x] 14.1.  Basic SUB-STRING finding mode. DONE 2026-06-20. find_units(query,
+               limit=50) registered in server.py (Annotated/pydantic Field params:
+               `query` required min_length=1, `limit` bounded 1..500). Wraps
+               engine.get_database().find_units() — case-insensitive substring
+               over NAME or DEFINITION, prefixes excluded, results in DB-native
+               order (ranking deferred to a later sub-item). Returns
+               {query, count, results:[{name, definition}]}. Tests: tests/
+               test_server.py (end-to-end via mcp.call_tool — meter hit, limit
+               honoured, no-match empty; one-tool §7.3.1 assertion relaxed to
+               "info + find_units registered") + tests/engine/test_convert.py
+               (5 engine golden tests: name+definition match, case-insensitive,
+               prefixes excluded, limit, no-match). 99 tests pass; ruff + mypy
+               clean.
+               (Later modes — fuzzy / dimension-conformable search — are separate
+               sub-items, not part of 14.1.)

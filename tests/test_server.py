@@ -23,11 +23,11 @@ import json
 from mcp_gnu_units.server import mcp
 
 
-def _call_info_via_app() -> dict:
-    """Invoke `info` through the app and return its parsed JSON payload."""
+def _call_via_app(name: str, arguments: dict) -> dict:
+    """Invoke a tool through the app and return its parsed JSON payload."""
 
     async def go():
-        return await mcp.call_tool("info", {})
+        return await mcp.call_tool(name, arguments)
 
     result = asyncio.run(go())
     # call_tool returns a list of content blocks; the payload is JSON text.
@@ -35,11 +35,15 @@ def _call_info_via_app() -> dict:
     return json.loads(contents[0].text)
 
 
-def test_exactly_one_tool_named_info():
-    # §7.3.1 — exactly ONE tool exposed, named "info".
-    tools = asyncio.run(mcp.list_tools())
-    assert len(tools) == 1
-    assert tools[0].name == "info"
+def _call_info_via_app() -> dict:
+    """Invoke `info` through the app and return its parsed JSON payload."""
+    return _call_via_app("info", {})
+
+
+def test_info_and_find_units_are_registered():
+    # §7.3.1 — info plus the first domain tool (find_units, §14.1) are exposed.
+    names = {t.name for t in asyncio.run(mcp.list_tools())}
+    assert {"info", "find_units"} <= names
 
 
 def test_tool_has_description_and_input_schema():
@@ -76,3 +80,27 @@ def test_info_survives_missing_sdk_metadata(monkeypatch):
     payload = _call_info_via_app()
     assert payload["status"] == "available"
     assert payload["mcp_sdk"] == "unknown"
+
+
+def test_find_units_invoke_through_app():
+    # §14.1 — basic substring search wired through the MCP layer end-to-end.
+    payload = _call_via_app("find_units", {"query": "meter"})
+    assert payload["query"] == "meter"
+    assert payload["count"] == len(payload["results"])
+    assert payload["count"] > 0
+    names = {hit["name"] for hit in payload["results"]}
+    assert "meter" in names
+    assert all("name" in hit and "definition" in hit for hit in payload["results"])
+
+
+def test_find_units_limit_is_honored():
+    # §14.1 — the `limit` cap bounds the result count.
+    payload = _call_via_app("find_units", {"query": "meter", "limit": 3})
+    assert payload["count"] == 3
+
+
+def test_find_units_no_match_returns_empty():
+    # §14.1 — a query that matches nothing returns cleanly, not an error.
+    payload = _call_via_app("find_units", {"query": "zzzznotaunit"})
+    assert payload["count"] == 0
+    assert payload["results"] == []

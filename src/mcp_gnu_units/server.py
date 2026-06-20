@@ -23,14 +23,15 @@ Transport is stdio (FastMCP default), which is what Claude Code / Desktop launch
 import platform
 from collections.abc import Sequence as AbcSequence
 from importlib.metadata import PackageNotFoundError, version
-from typing import Any
+from typing import Annotated, Any
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ContentBlock
-from pydantic import ValidationError
+from pydantic import Field, ValidationError
 
 from mcp_gnu_units import __version__
+from mcp_gnu_units.engine import get_database
 from mcp_gnu_units.errors import format_validation_error
 
 
@@ -95,8 +96,54 @@ def info() -> dict:
     }
 
 
-# TODO §4.5 / FUTURE — domain tools backed by the GNU units engine
-#           (convert, convert_to_si, find_units, define_unit, list_prefixes).
-#           Built only after section 9 is green; nothing registered here yet.
-#           When the engine lands, info() also reports the bundled GNU units
-#           database version it ships (§2.4 / §5.4).
+@mcp.tool()
+def find_units(
+    query: Annotated[
+        str,
+        Field(
+            description=(
+                "Case-insensitive substring to search for. Matches against both the "
+                "unit NAME and its DEFINITION text, so 'meter' finds the `meter` unit "
+                "itself as well as units defined in terms of it (e.g. `micron`). Use a "
+                "short keyword like 'byte', 'pressure', or 'newton'."
+            ),
+            min_length=1,
+        ),
+    ],
+    limit: Annotated[
+        int,
+        Field(
+            description=(
+                "Maximum number of matches to return (results are in the database's "
+                "native definition order; the scan stops once this many are found)."
+            ),
+            ge=1,
+            le=500,
+        ),
+    ] = 50,
+) -> dict:
+    """Search the GNU units database for units whose name or definition contains a keyword.
+
+    Basic substring search over the 3000+ unit GNU units database (TODO §14.1). A
+    hit is any unit whose name OR definition text contains `query` (case-insensitive);
+    prefixes are excluded. Results are returned in the database's native order and
+    capped at `limit`. Use this to discover the exact spelling of a unit before
+    calling a conversion tool.
+
+    Returns: `query` (echoed), `count` (number of results returned), and `results`,
+    a list of {`name`, `definition`} objects where `definition` is the unit's raw
+    source line from the database.
+    Example: find_units("meter") ->
+    {"query":"meter","count":50,"results":[{"name":"meter","definition":"meter     m"},
+    {"name":"LENGTH","definition":"LENGTH                  meter"}, ...]}
+    """
+    hits = get_database().find_units(query, limit=limit)
+    results = [{"name": name, "definition": definition} for name, definition in hits]
+    return {"query": query, "count": len(results), "results": results}
+
+
+# TODO §4.5 / FUTURE — remaining domain tools backed by the GNU units engine
+#           (convert, convert_to_si, define_unit, list_prefixes). find_units
+#           landed per §14.1; the rest follow.
+#           When the engine version is surfaced, info() also reports the bundled
+#           GNU units database version it ships (§2.4 / §5.4).

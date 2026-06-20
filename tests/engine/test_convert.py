@@ -80,6 +80,32 @@ def test_format_number_exact_integer_vs_decimal():
     assert format_number(Number(Fraction(1609344, 1_000_000), True)) == "1.609344"
 
 
+def test_find_units_substring_matches_name_and_definition(db):
+    # §14.1 — substring search over name OR definition (case-insensitive).
+    hits = dict(db.find_units("meter", limit=1000))
+    assert "meter" in hits  # exact name match
+    assert "micron" in hits  # matched via its definition ("micrometer")
+    assert all("meter" in (name + defn).casefold() for name, defn in hits.items())
+
+
+def test_find_units_is_case_insensitive(db):
+    assert db.find_units("METER", limit=5) == db.find_units("meter", limit=5)
+
+
+def test_find_units_excludes_prefixes(db):
+    # "kilo" is a prefix, not a unit, so it must not appear as a hit.
+    names = {name for name, _ in db.find_units("kilo", limit=1000)}
+    assert "kilo" not in names
+
+
+def test_find_units_limit_is_honored(db):
+    assert len(db.find_units("meter", limit=3)) == 3
+
+
+def test_find_units_no_match_is_empty(db):
+    assert db.find_units("zzzznotaunit") == []
+
+
 def test_load_with_si_config_changes_gating():
     si = load(LoadConfig(units_system="si"))
     default = load(LoadConfig(units_system="default"))
