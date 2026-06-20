@@ -131,14 +131,27 @@ def find_units(
     calling a conversion tool.
 
     Returns: `query` (echoed), `count` (number of results returned), and `results`,
-    a list of {`name`, `definition`} objects where `definition` is the unit's raw
-    source line from the database.
-    Example: find_units("meter") ->
-    {"query":"meter","count":50,"results":[{"name":"meter","definition":"meter     m"},
-    {"name":"LENGTH","definition":"LENGTH                  meter"}, ...]}
+    a list of objects each carrying:
+      - `name`       : the unit's name.
+      - `definition` : its definition text (the source line with the leading
+                       name token removed, so the name is not repeated).
+      - `kind`       : "unit" | "primitive" | "function" | "table".
+      - `dimension`  : the unit reduced to base-unit signature, e.g. "kg m^2 / s^3"
+                       for power — use it to check whether two units are
+                       conformable without a second call. Omitted for hits that
+                       do not reduce (functions, tables).
+      - `base_value` : the unit reduced to base/primitive units, coefficient
+                       included, e.g. "745.699 kg m^2 / s^3". Omitted alongside
+                       `dimension` when the hit does not reduce.
+    Enriching each hit lets you search AND triage in a single call instead of a
+    follow-up lookup per unit.
+    Example: find_units("horsepower") ->
+    {"query":"horsepower","count":9,"results":[{"name":"horsepower",
+    "definition":"550 foot pound force / sec","kind":"unit",
+    "dimension":"kg m^2 / s^3","base_value":"745.7 kg m^2 / s^3"}, ...]}
     """
-    hits = get_database().find_units(query, limit=limit)
-    results = [{"name": name, "definition": definition} for name, definition in hits]
+    db = get_database()
+    results = [db.describe(name) for name, _ in db.find_units(query, limit=limit)]
     return {"query": query, "count": len(results), "results": results}
 
 

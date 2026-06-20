@@ -93,6 +93,19 @@ def test_find_units_invoke_through_app():
     assert all("name" in hit and "definition" in hit for hit in payload["results"])
 
 
+def test_find_units_enriches_hits_with_kind_and_reduction():
+    # §14.2 — each hit carries kind + base reduction so the AI can search and
+    # triage in one call. horsepower is a derived unit reducing to power.
+    payload = _call_via_app("find_units", {"query": "horsepower"})
+    hp = next(hit for hit in payload["results"] if hit["name"] == "horsepower")
+    assert hp["definition"] == "550 foot pound force / sec"
+    assert hp["kind"] == "unit"
+    # Power reduces to kg m^2 / s^3 (base-unit signature, "/"-separated form).
+    assert hp["dimension"] == "kg m^2 / s^3"
+    assert hp["base_value"].endswith("kg m^2 / s^3")
+    assert hp["base_value"].split()[0].startswith("745")
+
+
 def test_find_units_limit_is_honored():
     # §14.1 — the `limit` cap bounds the result count.
     payload = _call_via_app("find_units", {"query": "meter", "limit": 3})

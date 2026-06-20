@@ -67,7 +67,9 @@ class SymbolTable:
         self.functions: dict[str, object] = {}  # name -> FunctionUnit (engine.functions)
         self.tables: dict[str, object] = {}  # name -> PiecewiseTable (engine.tables)
         self.unitlists: dict[str, list[str]] = {}
-        # Raw logical-line source per defined name, for find_units/describe (§13).
+        # Definition text per defined name (the source line with the leading
+        # name token stripped), for find_units/describe (§13). The name is the
+        # dict key, so it is not repeated in the value.
         self.sources: dict[str, str] = {}
         self._prefix_order_dirty = True
         self._prefixes_by_length: list[str] = []

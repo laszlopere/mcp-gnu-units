@@ -95,18 +95,18 @@ def _define(symbols: SymbolTable, line: str) -> None:
         fname = name[: name.index("(")]
         params = name[name.index("(") + 1 : -1]
         symbols.add_function(fname, parse_function_def(fname, params, rest))
-        symbols.sources[fname] = line
+        symbols.sources[fname] = rest
     elif name.endswith("-"):
         symbols.add_prefix(PrefixDef(name[:-1], parse(rest)))
-        symbols.sources[name[:-1] + "-"] = line
+        symbols.sources[name[:-1] + "-"] = rest
     elif "[" in name and name.endswith("]"):
         tname = name[: name.index("[")]
         out_unit = name[name.index("[") + 1 : -1]
         symbols.add_table(tname, parse_table_def(tname, out_unit, rest))
-        symbols.sources[tname] = line
+        symbols.sources[tname] = rest
     elif rest.startswith("!"):
         symbols.add_unit(PrimitiveUnit(name, rest.startswith("!dimensionless")))
-        symbols.sources[name] = line
+        symbols.sources[name] = rest
     elif rest:
         symbols.add_unit(DerivedUnit(name, parse(rest)))
-        symbols.sources[name] = line
+        symbols.sources[name] = rest

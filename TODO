@@ -642,3 +642,34 @@ coverage 0%" is the common ding).
                clean.
                (Later modes — fuzzy / dimension-conformable search — are separate
                sub-items, not part of 14.1.)
+    [x] 14.2.  ENRICH each hit with kind + base reduction, so the AI can search
+               AND triage in ONE call instead of following up with a describe
+               per unit. DONE 2026-06-20. For every result add three fields, sourced
+               from the engine's already-built Database.describe() (convert.py:135):
+                 - `kind`       : "unit" | "primitive" | "function" | "table"
+                                  (prefixes are still excluded from results).
+                 - `dimension`  : base-unit signature, e.g. "kg m^2 / s^3" for
+                                  power — lets the caller check conformability
+                                  without a second call.
+                 - `base_value` : the unit reduced to base/primitive units with
+                                  its coefficient, e.g. horsepower -> "745.7 kg
+                                  m^2 / s^3".
+               base_value/dimension are best-effort: omitted for hits that do
+               not reduce (functions, tables). Wire in server.py by mapping each
+               (name, definition) hit through get_database().describe(name);
+               engine.find_units() stays the pure matcher (returns tuples), so
+               its golden tests are unchanged. Update the find_units docstring
+               Returns/Example. Tests: extend tests/test_server.py (assert the
+               three new keys appear and reduce correctly for a known unit).
+               Implemented: server.find_units maps each hit through
+               get_database().describe(name); describe() now renders `dimension`
+               via _format_dimension (the "/"-separated form, matching
+               base_value) instead of str(Dimension). Also landed alongside:
+               find_units/describe `definition` no longer repeats the leading
+               name token (loader stores the parsed `rest` in symbols.sources,
+               not the raw line). Verified live through the MCP tool (horsepower
+               variants distinguished by base_value in one call; tempF/wiregauge
+               exercise the function + table best-effort branch). Tests: tests/
+               test_server.py::test_find_units_enriches_hits_with_kind_and_reduction
+               + tests/engine/test_convert.py::test_find_units_definition_omits_
+               leading_name. 101 tests pass; ruff + mypy clean.

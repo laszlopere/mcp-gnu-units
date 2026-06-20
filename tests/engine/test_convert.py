@@ -88,6 +88,16 @@ def test_find_units_substring_matches_name_and_definition(db):
     assert all("meter" in (name + defn).casefold() for name, defn in hits.items())
 
 
+def test_find_units_definition_omits_leading_name(db):
+    # The definition is the source line with the leading name token stripped,
+    # so the name is carried only by the `name` field, never repeated.
+    hits = dict(db.find_units("horsepower", limit=1000))
+    assert hits["horsepower"] == "550 foot pound force / sec"
+    assert hits["hp"] == "horsepower"  # alias body, name not echoed
+    for name, defn in hits.items():
+        assert not defn.split()[:1] == [name], f"{name} repeated in its definition"
+
+
 def test_find_units_is_case_insensitive(db):
     assert db.find_units("METER", limit=5) == db.find_units("meter", limit=5)
 

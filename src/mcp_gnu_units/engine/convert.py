@@ -114,11 +114,11 @@ class Database:
         """Find units whose name or definition contains ``query`` (case-insensitive)."""
         needle = query.casefold()
         hits: list[tuple[str, str]] = []
-        for name, source in self._symbols.sources.items():
+        for name, definition in self._symbols.sources.items():
             if name in self._symbols.prefixes or name.endswith("-"):
                 continue
-            if needle in name.casefold() or needle in source.casefold():
-                hits.append((name, source.strip()))
+            if needle in name.casefold() or needle in definition.casefold():
+                hits.append((name, definition))
                 if len(hits) >= limit:
                     break
         return hits
@@ -137,7 +137,7 @@ class Database:
         info: dict[str, str] = {"name": name}
         source = self._symbols.sources.get(name) or self._symbols.sources.get(name + "-")
         if source is not None:
-            info["definition"] = source.strip()
+            info["definition"] = source
         if name in self._symbols.functions:
             info["kind"] = "function"
         elif name in self._symbols.tables:
@@ -151,7 +151,7 @@ class Database:
         try:
             reduced = self.reduce(name)
             info["base_value"] = format_quantity(reduced)
-            info["dimension"] = str(reduced.dimension)
+            info["dimension"] = _format_dimension(reduced.dimension)
         except Exception:  # noqa: BLE001 - description is best-effort
             pass
         return info
