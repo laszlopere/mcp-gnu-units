@@ -28,6 +28,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .ast import Expr
 from .dimension import Dimension
 from .errors import NotConformableError
 from .evaluator import Evaluator
@@ -132,14 +133,17 @@ class Database:
         out.sort(key=lambda item: item[2], reverse=True)
         return [(name, value) for name, value, _ in out]
 
-    def describe(self, name: str) -> dict[str, str]:
+    def describe(self, name: str) -> dict[str, object]:
         """Show a unit/prefix/function/table definition and its base reduction."""
-        info: dict[str, str] = {"name": name}
+        info: dict[str, object] = {"name": name}
         source = self._symbols.sources.get(name) or self._symbols.sources.get(name + "-")
         if source is not None:
             info["definition"] = source
         if name in self._symbols.functions:
             info["kind"] = "function"
+            fn = self._symbols.functions[name]
+            if isinstance(fn, FunctionUnit):
+                info["function"] = self._function_info(fn)
         elif name in self._symbols.tables:
             info["kind"] = "table"
         elif name in self._symbols.prefixes:
@@ -155,6 +159,25 @@ class Database:
         except Exception:  # noqa: BLE001 - description is best-effort
             pass
         return info
+
+    def _function_info(self, fn: FunctionUnit) -> dict[str, object]:
+        """Tier-1 structured view of a function unit: signature + in/out dims (§15.1)."""
+        input_dims = [self._reduce_dim(expr) for expr in (fn.units_in or ())]
+        output_dim = self._reduce_dim(fn.units_out) if fn.units_out is not None else None
+        params = ", ".join(fn.params)
+        signature = f"{fn.name}({params}) -> {output_dim or '?'}"
+        info: dict[str, object] = {"signature": signature}
+        if input_dims:
+            info["input_dimensions"] = input_dims
+        info["output_dimension"] = output_dim
+        return info
+
+    def _reduce_dim(self, expr: Expr) -> str | None:
+        """Reduce an expression to its base-unit dimension signature, best-effort."""
+        try:
+            return _format_dimension(self._eval.reduce_expr(expr).dimension)
+        except Exception:  # noqa: BLE001 - best-effort, like describe()
+            return None
 
     # -- helpers ---------------------------------------------------------
 

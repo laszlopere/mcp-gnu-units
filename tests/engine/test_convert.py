@@ -98,6 +98,26 @@ def test_find_units_definition_omits_leading_name(db):
         assert not defn.split()[:1] == [name], f"{name} repeated in its definition"
 
 
+def test_describe_function_tier1_signature_and_dims(db):
+    # §15.1 tier 1 — function hits expose signature + in/out base dimensions.
+    tempf = db.describe("tempF")
+    assert tempf["kind"] == "function"
+    assert tempf["function"] == {
+        "signature": "tempF(x) -> K",
+        "input_dimensions": ["1"],  # dimensionless argument
+        "output_dimension": "K",
+    }
+    # Multi-param, no declared output: mph reduces to velocity, output is null.
+    wind = db.describe("windchill")["function"]
+    assert wind["signature"] == "windchill(T, speed) -> ?"
+    assert wind["input_dimensions"] == ["K", "m / s"]
+    assert wind["output_dimension"] is None
+    # Zero-param: input_dimensions omitted when empty.
+    db_fn = db.describe("dB")["function"]
+    assert db_fn["signature"] == "dB() -> ?"
+    assert "input_dimensions" not in db_fn
+
+
 def test_find_units_is_case_insensitive(db):
     assert db.find_units("METER", limit=5) == db.find_units("meter", limit=5)
 
