@@ -673,3 +673,53 @@ coverage 0%" is the common ding).
                test_server.py::test_find_units_enriches_hits_with_kind_and_reduction
                + tests/engine/test_convert.py::test_find_units_definition_omits_
                leading_name. 101 tests pass; ruff + mypy clean.
+
+
+[ ] 15.  ENGINE — surface PARSED structure for functions & tables (describe/find_units)
+    --------------------------------------------------------------------------
+    §14.2 enriched plain units with kind + base_value + dimension, but FUNCTION
+    and TABLE hits still expose only the raw collapsed `definition` line (the
+    noisy `units=…domain=…range=…` header + formula, or a flat run of number
+    pairs) and carry no reduction. The parser ALREADY builds structured objects
+    for both (engine/functions.py FunctionUnit, engine/tables.py
+    PiecewiseTable); this item surfaces that structure through
+    Database.describe() (convert.py:135) — and therefore find_units — as a
+    nested JSON object, so the AI can read a function's domain or a table's
+    points without re-parsing the definition string. Additive and best-effort:
+    plain units are unchanged, and the raw `definition` stays for provenance.
+    [ ] 15.1.  FUNCTIONS. When kind == "function", attach a `function` object
+               built from symbols.functions[name] (FunctionUnit). Two tiers:
+               TIER 1 (dimension parity with §14.2 — cheap, no AST rendering):
+                 - `signature`         : one-line "name(params) -> outdim", e.g.
+                                         "tempF(x) -> K"; outdim omitted/"?" when
+                                         units_out is None (windchill).
+                 - `input_dimensions`  : per-param base dimension, each units_in
+                                         Expr reduced via evaluator.reduce_expr +
+                                         _format_dimension (dimensionless -> "1";
+                                         mph -> "m / s").
+                 - `output_dimension`  : units_out reduced the same way, or null
+                                         when undeclared.
+               TIER 2 (full structure):
+                 - `params`            : the parameter-name tuple.
+                 - `domain` / `range`  : each Interval as {lo, hi, lo_closed,
+                                         hi_closed}; omit when None.
+                 - `invertible`        : inverse is not None.
+                 - `noerror`           : the flag.
+                 - `forward`/`inverse` : readable source, NOT the raw Expr AST.
+                                         Route (a): have parse_function_def retain
+                                         the body substring (everything after the
+                                         units=/domain=/range=/noerror header),
+                                         split on ";", collapse whitespace runs.
+                                         (Route (b), an Expr->source unparser, is
+                                         a later nicety.)
+               Omit None/empty fields (e.g. dB has no params/units/domain).
+               Tests: tempF (input "1" -> "K", domain=[-459.67,), invertible),
+               windchill (two-param, input ["K","m / s"], output null, not
+               invertible), dB (near-empty object).
+    [ ] 15.2.  TABLES. When kind == "table", attach a `table` object built from
+               symbols.tables[name] (PiecewiseTable): `out_unit` (rendered),
+               `out_dimension` (out_unit reduced via _format_dimension),
+               `points` (the sorted (input, output) pairs as a list),
+               `point_count`, and `noerror`. Tests: brwiregauge (16 points,
+               output reduces to metres) and gasmark[degR] (oven-temperature
+               lookup from the tables.py docstring).
