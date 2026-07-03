@@ -38,13 +38,13 @@ from mcp_gnu_units.server import mcp
 # the given fields; `error` cases must raise a ToolError containing the substring.
 GOLDEN: list[dict] = [
     {"args": {"from_expr": "1 mile", "to_expr": "km"},
-     "expect": {"result": "1.609344", "exact": True}},
+     "expect": {"result": "1.609344 km", "exact": True}},
     {"args": {"from_expr": "tempC(0)", "to_expr": "tempF"},
-     "expect": {"result": "32", "exact": True}},
+     "expect": {"result": "32 tempF", "exact": True}},
     {"args": {"from_expr": "tempF(212)", "to_expr": "tempC"},
-     "expect": {"result": "100", "exact": True}},
+     "expect": {"result": "100 tempC", "exact": True}},
     {"args": {"from_expr": "1 kW*hour", "to_expr": "J"},
-     "expect": {"result": "3600000", "exact": True}},
+     "expect": {"result": "3600000 J", "exact": True}},
     {"args": {"from_expr": "1 meter", "to_expr": "kg"},
      "error": "non-conformable"},
 ]
@@ -90,7 +90,7 @@ def run(*, verbose: bool = False, human_readable: bool = False) -> tuple[int, in
         failed += not ok
         if verbose:
             print(json.dumps({"request": case["args"],
-                              "reply": {"status": status, "body": reply}}))
+                              "reply": {"status": status, "body": reply}}, indent=2))
         if human_readable:
             arrow = f"{case['args']['from_expr']} -> {case['args']['to_expr']}"
             body = reply.get("result", reply) if status == "ok" else f"error: {reply}"

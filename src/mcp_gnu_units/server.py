@@ -188,14 +188,14 @@ def convert(
     expressions like `kW*h` or `acre*ft`. Linear conversions return the ratio of
     coefficients; a nonlinear target (e.g. `tempF`) applies that unit's inverse.
 
-    Returns: `from` and `to` (echoed), `result` (the converted magnitude rendered
-    as a string — the primary answer), `value` (the same magnitude as a float for
-    programmatic use), and `exact` (true when the result is exact, false when it
-    was rounded).
+    Returns: `from` and `to` (echoed), `result` (the converted magnitude WITH the
+    target unit, e.g. "1.609344 km" — the primary human-readable answer), `value`
+    (the same magnitude as a bare float for programmatic use), and `exact` (true
+    when the result is exact, false when it was rounded).
     Errors cleanly (isError) when a unit is unknown, an expression is malformed,
     or the two sides are not conformable.
     Example: convert("1 mile", "km") ->
-    {"from":"1 mile","to":"km","result":"1.609344","value":1.609344,"exact":true}
+    {"from":"1 mile","to":"km","result":"1.609344 km","value":1.609344,"exact":true}
     """
     db = get_database()
     try:
@@ -205,7 +205,7 @@ def convert(
     return {
         "from": from_expr,
         "to": to_expr,
-        "result": res.formatted,
+        "result": f"{res.formatted} {to_expr}",
         "value": res.value.as_float(),
         "exact": res.exact,
     }

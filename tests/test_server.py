@@ -124,7 +124,8 @@ def test_convert_invoke_through_app():
     payload = _call_via_app("convert", {"from_expr": "1 mile", "to_expr": "km"})
     assert payload["from"] == "1 mile"
     assert payload["to"] == "km"
-    assert payload["result"] == "1.609344"
+    assert payload["result"] == "1.609344 km"
+    assert payload["value"] == 1.609344
     assert payload["exact"] is True
 
 
