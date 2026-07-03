@@ -34,18 +34,89 @@ from mcp.server.fastmcp.exceptions import ToolError
 
 from mcp_gnu_units.server import mcp
 
-# Golden conversions with pinned answers. `expect` cases must succeed and match
-# the given fields; `error` cases must raise a ToolError containing the substring.
+# Golden conversions with pinned answers. `expect` cases must succeed and every
+# listed field must match; `error` cases must raise a ToolError containing the
+# substring. Values were pinned against the tool's real output, not hand-computed.
 GOLDEN: list[dict] = [
+    # -- linear conversions across categories -----------------------------
     {"args": {"from_expr": "1 mile", "to_expr": "km"},
-     "expect": {"result": "1.609344 km", "exact": True}},
-    {"args": {"from_expr": "tempC(0)", "to_expr": "tempF"},
-     "expect": {"result": "32 tempF", "exact": True}},
-    {"args": {"from_expr": "tempF(212)", "to_expr": "tempC"},
-     "expect": {"result": "100 tempC", "exact": True}},
+     "expect": {"result": "1.609344 km", "value": 1.609344, "exact": True}},
+    {"args": {"from_expr": "1 inch", "to_expr": "cm"},
+     "expect": {"result": "2.54 cm", "value": 2.54, "exact": True}},
+    {"args": {"from_expr": "1 ft", "to_expr": "m"},
+     "expect": {"result": "0.3048 m", "value": 0.3048, "exact": True}},
+    {"args": {"from_expr": "1 lb", "to_expr": "kg"},
+     "expect": {"result": "0.45359237 kg", "exact": True}},
+    {"args": {"from_expr": "1 gallon", "to_expr": "liter"},
+     "expect": {"result": "3.785411784 liter", "exact": True}},
+    {"args": {"from_expr": "1 hour", "to_expr": "s"},
+     "expect": {"result": "3600 s", "value": 3600.0, "exact": True}},
+    {"args": {"from_expr": "1 atm", "to_expr": "pascal"},
+     "expect": {"result": "101325 pascal", "value": 101325.0, "exact": True}},
+    {"args": {"from_expr": "1 acre", "to_expr": "m^2"},
+     "expect": {"result": "4046.8564224 m^2", "exact": True}},
+    {"args": {"from_expr": "60 mph", "to_expr": "km/hour"},
+     "expect": {"result": "96.56064 km/hour", "exact": True}},
+
+    # -- data units (binary prefixes) -------------------------------------
+    {"args": {"from_expr": "1 byte", "to_expr": "bit"},
+     "expect": {"result": "8 bit", "value": 8.0, "exact": True}},
+    {"args": {"from_expr": "1 GiB", "to_expr": "MiB"},
+     "expect": {"result": "1024 MiB", "value": 1024.0, "exact": True}},
+
+    # -- compound unit expressions ----------------------------------------
     {"args": {"from_expr": "1 kW*hour", "to_expr": "J"},
-     "expect": {"result": "3600000 J", "exact": True}},
+     "expect": {"result": "3600000 J", "value": 3600000.0, "exact": True}},
+    {"args": {"from_expr": "1 kg m/s^2", "to_expr": "newton"},
+     "expect": {"result": "1 newton", "value": 1.0, "exact": True}},
+    {"args": {"from_expr": "1 N m", "to_expr": "joule"},
+     "expect": {"result": "1 joule", "value": 1.0, "exact": True}},
+    # exact ratio whose 12-significant-figure rendering is a rounded decimal:
+    # `exact` reports the internal rational, NOT the truncated display string.
+    {"args": {"from_expr": "2.5 acre*ft", "to_expr": "gallons"},
+     "expect": {"result": "814628.571429 gallons", "exact": True}},
+
+    # -- inexact result (irrational coefficient) --------------------------
+    {"args": {"from_expr": "sqrt(2) m", "to_expr": "m"},
+     "expect": {"result": "1.41421356237 m", "exact": False}},
+
+    # -- function (nonlinear) units, both directions ----------------------
+    {"args": {"from_expr": "tempC(0)", "to_expr": "tempF"},
+     "expect": {"result": "32 tempF", "value": 32.0, "exact": True}},
+    {"args": {"from_expr": "tempC(100)", "to_expr": "tempF"},
+     "expect": {"result": "212 tempF", "value": 212.0, "exact": True}},
+    {"args": {"from_expr": "tempF(212)", "to_expr": "tempC"},
+     "expect": {"result": "100 tempC", "value": 100.0, "exact": True}},
+    {"args": {"from_expr": "tempF(32)", "to_expr": "tempC"},
+     "expect": {"result": "0 tempC", "value": 0.0, "exact": True}},
+    {"args": {"from_expr": "tempC(0)", "to_expr": "K"},
+     "expect": {"result": "273.15 K", "value": 273.15, "exact": True}},
+    # linear source -> nonlinear target (the function's inverse is applied)
+    {"args": {"from_expr": "300 K", "to_expr": "tempC"},
+     "expect": {"result": "26.85 tempC", "value": 26.85, "exact": True}},
+
+    # -- piecewise table units, both directions ---------------------------
+    {"args": {"from_expr": "brwiregauge(0)", "to_expr": "mm"},
+     "expect": {"result": "8.2296 mm", "value": 8.2296, "exact": True}},
+    {"args": {"from_expr": "2 mm", "to_expr": "brwiregauge"},
+     "expect": {"result": "14.157480315 brwiregauge", "exact": True}},
+
+    # -- error paths (each must fail cleanly, not crash) ------------------
     {"args": {"from_expr": "1 meter", "to_expr": "kg"},
+     "error": "non-conformable"},
+    {"args": {"from_expr": "1 liter", "to_expr": "meter"},
+     "error": "cannot convert '1 liter' to 'meter': non-conformable"},
+    {"args": {"from_expr": "1 foobarunit", "to_expr": "m"},
+     "error": "'foobarunit' is not a defined unit"},
+    {"args": {"from_expr": "1 m", "to_expr": "zzznot"},
+     "error": "'zzznot' is not a defined unit"},
+    # a nonlinear unit used as a bare source needs call syntax, e.g. tempF(50)
+    {"args": {"from_expr": "50 tempF", "to_expr": "tempC"},
+     "error": "'tempF' is not a defined unit"},
+    # nonlinear/table TARGET with a source of the wrong dimension
+    {"args": {"from_expr": "1", "to_expr": "brwiregauge"},
+     "error": "cannot convert to table 'brwiregauge'"},
+    {"args": {"from_expr": "1 m", "to_expr": "tempF"},
      "error": "non-conformable"},
 ]
 
