@@ -41,9 +41,10 @@ def _call_info_via_app() -> dict:
 
 
 def test_info_find_units_and_convert_are_registered():
-    # §7.3.1 — info plus the domain tools (find_units §14.1, convert §16.1).
+    # §7.3.1 — info plus the domain tools (find_units §14.1, convert §16.1,
+    # convert_to_si §17.1).
     names = {t.name for t in asyncio.run(mcp.list_tools())}
-    assert {"info", "find_units", "convert"} <= names
+    assert {"info", "find_units", "convert", "convert_to_si"} <= names
 
 
 def test_tool_has_description_and_input_schema():
@@ -136,3 +137,23 @@ def test_convert_non_conformable_errors_cleanly():
 
     with pytest.raises(ToolError, match="non-conformable"):
         _call_via_app("convert", {"from_expr": "1 meter", "to_expr": "kg"})
+
+
+def test_convert_to_si_invoke_through_app():
+    # §17.1/§17.2 — golden pin through the MCP layer: 1 kW*hour == 3.6e6 J in
+    # base units. (Note: 'hour', not 'h' — 'h' is Planck's constant in GNU units.)
+    payload = _call_via_app("convert_to_si", {"expr": "kW*hour"})
+    assert payload["expr"] == "kW*hour"
+    assert payload["result"] == "3600000 kg m^2 / s^2"
+    assert payload["value"] == 3600000.0
+    assert payload["dimension"] == "kg m^2 / s^2"
+    assert payload["exact"] is True
+
+
+def test_convert_to_si_nonlinear_errors_cleanly():
+    # §17.1 — a nonlinear unit has no linear base form and errors cleanly.
+    import pytest
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    with pytest.raises(ToolError):
+        _call_via_app("convert_to_si", {"expr": "tempF"})

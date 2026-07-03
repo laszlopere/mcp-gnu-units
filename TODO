@@ -858,11 +858,27 @@ coverage 0%" is the common ding).
                105 tests pass; ruff + mypy clean.
 
 
-[ ] 17.  TOOL — convert_to_si  (reduce to SI base units; §13)
+[x] 17.  TOOL — convert_to_si  (reduce to SI base units; §13)
     --------------------------------------------------------------------------
     Wire Database.convert_to_si() (convert.py:107) into server.py as an
     @mcp.tool(), same pattern as §16.
-    [ ] 17.1.  Register convert_to_si(expr) with rich param descriptions;
+    [x] 17.1.  Register convert_to_si(expr) with rich param descriptions;
                return the SI magnitude + base-unit signature + exact/inexact.
-    [ ] 17.2.  Tests: end-to-end via mcp.call_tool + a golden pin (e.g.
-               kW*h -> 3.6e6 J).
+               DONE 2026-07-03 — server.convert_to_si() wraps
+               get_database().convert_to_si(); returns {expr, result (magnitude +
+               base-unit signature, e.g. "3600000 kg m^2 / s^2"), value (bare
+               float), dimension (just the signature, "1" when dimensionless),
+               exact}. UnitsError -> clean ToolError (unknown/malformed/nonlinear
+               all caught). Rich param description warns about the GNU units
+               single-letter footgun (h = Planck's constant, use 'hour'). Added a
+               ConversionResult.dimension_signature property (convert.py) so the
+               tool gets the base-unit string without reaching into the private
+               _format_dimension helper.
+    [x] 17.2.  Tests: end-to-end via mcp.call_tool + a golden pin (e.g.
+               kW*h -> 3.6e6 J). DONE — tests/test_server.py: registration
+               assertion widened to include convert_to_si;
+               test_convert_to_si_invoke_through_app pins 1 kW*hour -> "3600000 kg
+               m^2 / s^2" (exact) via mcp.call_tool (NOTE: 'hour', not 'h' — 'h' is
+               Planck's constant, the documented juxtaposition footgun);
+               test_convert_to_si_nonlinear_errors_cleanly asserts tempF -> clean
+               ToolError. 111 tests pass; ruff + ruff-format + mypy clean.

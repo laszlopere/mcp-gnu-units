@@ -217,8 +217,58 @@ def convert(
     }
 
 
+@mcp.tool()
+def convert_to_si(
+    expr: Annotated[
+        str,
+        Field(
+            description=(
+                "The quantity or unit expression to reduce to SI base units. May carry a "
+                "numeric coefficient and be compound: 'kW*hour', '100 W', 'acre ft', "
+                "'55 mile/hour'. A bare unit like 'newton' is treated as one of that unit. "
+                "⚠️ In the GNU units database single-letter names are literal: 'h' is "
+                "Planck's constant, not hour — write 'hour' (so energy is 'kW*hour', not "
+                "'kW*h'). Nonlinear units (e.g. 'tempF') have no linear base form and error."
+            ),
+            min_length=1,
+        ),
+    ],
+) -> dict:
+    """Reduce a value or unit expression to its SI base units (GNU units engine, TODO §17).
+
+    Rewrites any expression in terms of the database's primitive/base units — kg, m,
+    s, A, K, mol, cd, and the like — collapsing all derived and prefixed units. This
+    is how you see what a quantity *really* is dimensionally: `kW*hour` becomes
+    `3600000 kg m^2 / s^2` (3.6 MJ), `newton` becomes `1 kg m / s^2`. Use it to
+    compare or sanity-check units, or to get a magnitude in coherent SI.
+
+    Returns: `expr` (echoed), `result` (the reduced quantity WITH its base-unit
+    signature, e.g. "3600000 kg m^2 / s^2" — the primary human-readable answer),
+    `value` (the same magnitude as a bare float for programmatic use), `dimension`
+    (just the base-unit signature, e.g. "kg m^2 / s^2", or "1" when dimensionless),
+    and `exact` (true when the result is exact, false when it was rounded).
+    Errors cleanly (isError) when a unit is unknown, an expression is malformed, or
+    it is a nonlinear unit with no linear base form (e.g. `tempF`).
+    Example: convert_to_si("kW*hour") ->
+    {"expr":"kW*hour","result":"3600000 kg m^2 / s^2","value":3600000.0,
+    "dimension":"kg m^2 / s^2","exact":true}
+    """
+    db = get_database()
+    try:
+        res = db.convert_to_si(expr)
+    except UnitsError as exc:
+        raise ToolError(str(exc)) from exc
+    return {
+        "expr": expr,
+        "result": res.formatted,
+        "value": res.value.as_float(),
+        "dimension": res.dimension_signature,
+        "exact": res.exact,
+    }
+
+
 # TODO §4.5 / FUTURE — remaining domain tools backed by the GNU units engine
-#           (convert_to_si, define_unit, list_prefixes). find_units landed per
-#           §14.1, convert per §16.1; the rest follow.
+#           (define_unit, list_prefixes). find_units landed per §14.1, convert
+#           per §16.1, convert_to_si per §17.1; the rest follow.
 #           info() reports the bundled GNU units database version it ships via
 #           `units_db` (§2.4.6 / §5.4).

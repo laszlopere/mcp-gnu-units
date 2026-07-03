@@ -59,6 +59,11 @@ class ConversionResult:
     def dimension(self) -> Dimension:
         return self.quantity.dimension
 
+    @property
+    def dimension_signature(self) -> str:
+        """The base-unit signature (e.g. ``kg m^2 / s^2``); ``1`` when dimensionless."""
+        return _format_dimension(self.dimension)
+
 
 class Database:
     """A loaded units database with conversion/inspection operations."""
