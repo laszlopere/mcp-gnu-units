@@ -405,14 +405,41 @@ repo is ever indexed by Glama — see §12.0.
 --------------------------------------------------------------------------------
 
 
-[ ] 10.  PUBLISH — PUBLIC GITHUB REPO + SPONSORSHIP
-    [ ] 10.1.  Create + push the PUBLIC GitHub repo `laszlopere/mcp-gnu-units`. The
+[~] 10.  PUBLISH — PUBLIC GITHUB REPO + SPONSORSHIP
+    [x] 10.1.  Create + push the PUBLIC GitHub repo `laszlopere/mcp-gnu-units`. The
                homelab `origin` stays PRIVATE; the public `github` remote is what
                PyPI/Glama/awesome read. Keep both in sync. The USER pushes the
                default branch (agent pushes to main/master are blocked).
-    [ ] 10.2.  Repo metadata: `gh repo edit laszlopere/mcp-gnu-units --description
+               DONE 2026-07-03 — USER ran `gh repo create laszlopere/mcp-gnu-units
+               --public --source . --remote github` (agent create was blocked by
+               the public-surface classifier) + `git push -u github master`. Repo
+               live + PUBLIC at https://github.com/laszlopere/mcp-gnu-units; the
+               `github` remote sits beside the private `origin` (git@git:), both at
+               9a86b79. First CI run triggered on the push.
+               ⚠️ DELIBERATELY NOT DONE YET (protects the §12.0 description freeze):
+               no repo description (§10.2), NO topics — especially NOT
+               `model-context-protocol`, which is what makes Glama index + FREEZE
+               the search description (§10.3) — and no Glama submission (§12). Add
+               those only once the description is locked + the server is
+               feature-complete (§17 convert_to_si + define_unit + list_prefixes
+               still unbuilt).
+    [~] 10.2.  Repo metadata: `gh repo edit laszlopere/mcp-gnu-units --description
                "<GitHub-repo form of the FINAL description>"` + set homepage.
-    [ ] 10.3.  Topics: `gh repo edit laszlopere/mcp-gnu-units --add-topic mcp
+               DESCRIPTION DONE 2026-07-03 — set via `gh repo edit --description`
+               to: "Unit converter for AI agents, powered by the GNU units
+               database — convert 3000+ units of measurement, evaluate compound
+               unit expressions, reduce to SI base units, dimensional analysis.
+               Offline, deterministic." (leads with the "unit converter" search
+               noun to match the pyproject PRIMARY line; adds "measurement" +
+               "dimensional analysis" — the uncontested keywords we own; ~205
+               chars, under GitHub's 350 limit). This is the EDITABLE GitHub About
+               text, NOT the frozen Glama search text (that stays the pyproject
+               PRIMARY line, §12.0).
+               HOMEPAGE DEFERRED — left unset until §11 publishes to PyPI, then
+               point it at https://pypi.org/project/mcp-gnu-units/ (404s until
+               then). Topics still EMPTY on purpose (no `model-context-protocol`
+               yet — §10.3 / freeze guard).
+    [~] 10.3.  Topics: `gh repo edit laszlopere/mcp-gnu-units --add-topic mcp
                --add-topic model-context-protocol --add-topic mcp-server
                --add-topic units --add-topic unit-conversion --add-topic
                gnu-units --add-topic measurement`.
@@ -421,13 +448,28 @@ repo is ever indexed by Glama — see §12.0.
                search description (§12.0). Do NOT add it until the FINAL
                description is locked in pyproject + repo description. Niche topics
                (units, gnu-units) rank far better than ~18k-repo `mcp-server`.
-    [ ] 10.4.  SPONSORSHIP — enable GitHub Sponsors:
-        [ ] 10.4.1.  Add `.github/FUNDING.yml` (copy the pattern from the sibling
+               PARTIAL 2026-07-03 — added the SIX safe topics (mcp, mcp-server,
+               units, unit-conversion, gnu-units, measurement) which help GitHub +
+               Google search and are reversible. HELD BACK `model-context-protocol`
+               ON PURPOSE: it is the Glama-index/description-FREEZE trigger, and
+               (a) the server is not feature-complete (§17 convert_to_si +
+               define_unit + list_prefixes unbuilt) and (b) the frozen string —
+               the pyproject PRIMARY line — is still under review (differs from the
+               GitHub About text). Add `model-context-protocol` only after both are
+               settled (ties to §12.0 / the PUBLISHING preamble).
+    [~] 10.4.  SPONSORSHIP — enable GitHub Sponsors:
+        [x] 10.4.1.  Add `.github/FUNDING.yml` (copy the pattern from the sibling
                      ../mcp-bytesmith/.github/FUNDING.yml — READ-ONLY, don't edit
                      it) with the user's sponsor accounts (github: laszlopere,
                      + any ko-fi/etc.). Renders the "Sponsor" button on the repo.
+                     DONE 2026-07-03 — .github/FUNDING.yml added verbatim to the
+                     family pattern (`github: [laszlopere]`; ko-fi/liberapay/custom
+                     left as commented examples). YAML validates. Renders once
+                     pushed to the github remote (USER push).
         [ ] 10.4.2.  Ensure GitHub Sponsors is enabled at the account level so
-                     the button is live (one-time; USER action).
+                     the button is live (one-time; USER action). PENDING — one-time
+                     account-level step at github.com/sponsors/laszlopere; already
+                     satisfied for the sibling repos, so likely already on.
     [ ] 10.5.  LICENSE (GPL-3.0-or-later) + README.md at repo root (from §1-2).
         [ ] 10.5.1.  README OPENING — the intro paragraph (before any `##`
                      heading) = the LONG-form FINAL description (bottom block).
