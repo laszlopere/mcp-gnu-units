@@ -619,19 +619,21 @@ repo is ever indexed by Glama — see §12.0.
                the CHANGELOG [0.1.0] section as notes:
                https://github.com/laszlopere/mcp-gnu-units/releases/tag/v0.1.0
                (present BEFORE the §10.3 topic trigger, so scoring auto-enables).
-    [~] 12.3.  Submit: glama.ai/mcp/servers → "Add Server" → fill Name +
+    [x] 12.3.  Submit: glama.ai/mcp/servers → "Add Server" → fill Name +
                Description + repo URL → Submit for Review (drive via
                chrome-devtools MCP with the user's logged-in Glama session), OR
                let the GitHub crawler pick it up via the `model-context-protocol`
                topic. Submissions sit in a manual moderation queue (can take
                days); nudge Glama Discord / support@glama.ai if stuck.
-               2026-07-03 — CRAWLER PATH ACTIVE: the model-context-protocol topic
-               is on (§10.3), so Glama will auto-discover the repo. Manual "Add
-               Server" attempted via the browser but the Glama session was LOGGED
-               OUT (the Add-Server button opened a Sign-Up/Sign-In modal). Manual
-               submit is optional (accelerant only); left for the USER to sign in
-               to Glama if they want to submit manually, else the crawler picks it
-               up.
+               DONE 2026-07-03 — after the USER signed in with GitHub, submitted
+               via "Add Server" (Server tab): Name mcp-gnu-units, Description = the
+               GitHub About wording, repo URL
+               https://github.com/laszlopere/mcp-gnu-units → "Submit for Review".
+               Dialog closed cleanly (no errors); now in Glama's manual moderation
+               queue ("Public submissions are reviewed before becoming publicly
+               visible"). The model-context-protocol crawler path (§10.3) also
+               covers it as a backstop. Nudge Glama Discord / support@glama.ai if
+               it stalls for days.
     [ ] 12.4.  Create the Glama dashboard RELEASE to enable the quality grade
                (.../admin/<server>/admin/dockerfile). Build spec for a PyPI/uv
                server:
