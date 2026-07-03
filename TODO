@@ -448,15 +448,15 @@ repo is ever indexed by Glama — see §12.0.
                search description (§12.0). Do NOT add it until the FINAL
                description is locked in pyproject + repo description. Niche topics
                (units, gnu-units) rank far better than ~18k-repo `mcp-server`.
-               PARTIAL 2026-07-03 — added the SIX safe topics (mcp, mcp-server,
-               units, unit-conversion, gnu-units, measurement) which help GitHub +
-               Google search and are reversible. HELD BACK `model-context-protocol`
-               ON PURPOSE: it is the Glama-index/description-FREEZE trigger, and
-               (a) the server is not feature-complete (§17 convert_to_si +
-               define_unit + list_prefixes unbuilt) and (b) the frozen string —
-               the pyproject PRIMARY line — is still under review (differs from the
-               GitHub About text). Add `model-context-protocol` only after both are
-               settled (ties to §12.0 / the PUBLISHING preamble).
+               DONE 2026-07-03 — all SEVEN topics now present. Six safe topics
+               added first (mcp, mcp-server, units, unit-conversion, gnu-units,
+               measurement); `model-context-protocol` added LAST, once both
+               preconditions were met: (a) feature-complete — all five tools ship
+               (§14/16/17/18/19) — and (b) the frozen pyproject description locked +
+               published to PyPI (§11.5). Also gated behind glama.json (§12.1) + a
+               GitHub Release (§12.2) being present first, so Glama indexes a
+               complete, scorable, owned repo. This is the Glama crawler trigger —
+               indexing + description FREEZE now proceed.
     [x] 10.4.  SPONSORSHIP — enable GitHub Sponsors:
         [x] 10.4.1.  Add `.github/FUNDING.yml` (copy the pattern from the sibling
                      ../mcp-bytesmith/.github/FUNDING.yml — READ-ONLY, don't edit
@@ -604,21 +604,34 @@ repo is ever indexed by Glama — see §12.0.
                GitHub repo description BEFORE the repo is first indexed (i.e.
                before adding the `model-context-protocol` topic in §10.3 and
                before "Add Server"). Get it right once — there is no later fix.
-    [ ] 12.1.  glama.json — add at repo root EARLY (before submission) to claim
+    [x] 12.1.  glama.json — add at repo root EARLY (before submission) to claim
                ownership + unlock maintainer controls:
                  {"$schema": "https://glama.ai/mcp/schemas/server.json",
                   "maintainers": ["laszlopere"]}
-    [ ] 12.2.  Publish a GitHub Release BEFORE submitting — a release present at
+               DONE 2026-07-03 — glama.json at repo root (family pattern,
+               maintainers:[laszlopere]); committed 16b2f03, pushed both remotes.
+    [x] 12.2.  Publish a GitHub Release BEFORE submitting — a release present at
                first index auto-enables scoring; a release added AFTER indexing
                does NOT auto-trigger (you'd then have to build a release on the
                Glama dashboard, §12.4). Author the GH Release notes in the desired
                wording (they become the Glama release changelog verbatim).
-    [ ] 12.3.  Submit: glama.ai/mcp/servers → "Add Server" → fill Name +
+               DONE 2026-07-03 — GitHub Release v0.1.0 published from the tag with
+               the CHANGELOG [0.1.0] section as notes:
+               https://github.com/laszlopere/mcp-gnu-units/releases/tag/v0.1.0
+               (present BEFORE the §10.3 topic trigger, so scoring auto-enables).
+    [~] 12.3.  Submit: glama.ai/mcp/servers → "Add Server" → fill Name +
                Description + repo URL → Submit for Review (drive via
                chrome-devtools MCP with the user's logged-in Glama session), OR
                let the GitHub crawler pick it up via the `model-context-protocol`
                topic. Submissions sit in a manual moderation queue (can take
                days); nudge Glama Discord / support@glama.ai if stuck.
+               2026-07-03 — CRAWLER PATH ACTIVE: the model-context-protocol topic
+               is on (§10.3), so Glama will auto-discover the repo. Manual "Add
+               Server" attempted via the browser but the Glama session was LOGGED
+               OUT (the Add-Server button opened a Sign-Up/Sign-In modal). Manual
+               submit is optional (accelerant only); left for the USER to sign in
+               to Glama if they want to submit manually, else the crawler picks it
+               up.
     [ ] 12.4.  Create the Glama dashboard RELEASE to enable the quality grade
                (.../admin/<server>/admin/dockerfile). Build spec for a PyPI/uv
                server:
