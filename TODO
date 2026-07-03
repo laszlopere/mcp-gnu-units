@@ -881,4 +881,13 @@ coverage 0%" is the common ding).
                m^2 / s^2" (exact) via mcp.call_tool (NOTE: 'hour', not 'h' — 'h' is
                Planck's constant, the documented juxtaposition footgun);
                test_convert_to_si_nonlinear_errors_cleanly asserts tempF -> clean
-               ToolError. 111 tests pass; ruff + ruff-format + mypy clean.
+               ToolError.
+               PLUS tests/test_e2e_convert_to_si.py — a dedicated golden-pin e2e
+               suite mirroring test_e2e_convert.py: 14 cases (energy/force/power/
+               pressure/length/speed/volume/data/amount, dimensionless -> "1",
+               inexact sqrt(2), and clean error paths for nonlinear/unknown/
+               malformed). Data-driven, standalone-runnable
+               (`python tests/test_e2e_convert_to_si.py`), and honors
+               ./run-tests.sh's --verbose (request/reply JSON) + --human-readable
+               (readable "expr -> SI = result" lines) exactly like the convert
+               e2e. 112 tests pass; ruff + ruff-format + mypy clean.
