@@ -513,10 +513,17 @@ repo is ever indexed by Glama — see §12.0.
                      literal line "Sponsoring keeps this project alive …" and links
                      **[GitHub Sponsors](https://github.com/sponsors/laszlopere)** +
                      points at the repo's Sponsor button (live via §10.4).
-    [~] 10.6.  CHANGELOG.md at repo root (siblings carry one). Each release's
+    [x] 10.6.  CHANGELOG.md at repo root (siblings carry one). Each release's
                section is the source for the GitHub Release notes body — which
                Glama copies VERBATIM as the release changelog (§12.2) — so author
-               it in the wording you want public. CHANGELOG STILL TODO.
+               it in the wording you want public.
+               CHANGELOG DONE 2026-07-03 — CHANGELOG.md added (Keep a Changelog +
+               SemVer, mirrors mcp-bytesmith). Nothing is released yet, so all
+               work-to-date lives under a single [Unreleased] section (engine,
+               numerics, bundled DB, the info/find_units/convert tools, LLM-JSON
+               tolerance, CI), authored in public-facing wording. At first tag
+               (§11.4 v0.1.0) rename [Unreleased] → the dated version section and
+               use it verbatim as the GitHub Release notes body.
                NOTICE DONE (2026-06-19): NOTICE file at repo root attributes the
                bundled GNU units database (FSF, GPL-3.0-or-later, §2.4) with
                version pins + checksums; ships in wheel (dist-info/licenses/) and
