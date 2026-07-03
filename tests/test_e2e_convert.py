@@ -1,0 +1,119 @@
+# mcp-gnu-units — pure-Python MCP server for GNU units conversion & dimensional analysis.
+# Copyright (C) 2026  Laszlo Pere
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+"""§16.2 — end-to-end golden pins for the `convert` tool, exercised through the
+FastMCP layer (`mcp.call_tool`), same path a real client drives.
+
+Two ways to run it:
+  * as part of the suite — `uv run pytest` collects `test_e2e_convert` below;
+  * as a standalone script — `python tests/test_e2e_convert.py`:
+        (no options)       print only the pass/fail statistics
+        --verbose          also print each request/reply as JSON
+        --human-readable   also print each conversion in a readable line
+"""
+
+import argparse
+import asyncio
+import json
+import sys
+
+from mcp.server.fastmcp.exceptions import ToolError
+
+from mcp_gnu_units.server import mcp
+
+# Golden conversions with pinned answers. `expect` cases must succeed and match
+# the given fields; `error` cases must raise a ToolError containing the substring.
+GOLDEN: list[dict] = [
+    {"args": {"from_expr": "1 mile", "to_expr": "km"},
+     "expect": {"result": "1.609344", "exact": True}},
+    {"args": {"from_expr": "tempC(0)", "to_expr": "tempF"},
+     "expect": {"result": "32", "exact": True}},
+    {"args": {"from_expr": "tempF(212)", "to_expr": "tempC"},
+     "expect": {"result": "100", "exact": True}},
+    {"args": {"from_expr": "1 kW*hour", "to_expr": "J"},
+     "expect": {"result": "3600000", "exact": True}},
+    {"args": {"from_expr": "1 meter", "to_expr": "kg"},
+     "error": "non-conformable"},
+]
+
+
+def _call(args: dict) -> tuple[str, object]:
+    """Invoke `convert` through the app; return ('ok', payload) or ('error', message)."""
+
+    async def go():
+        return await mcp.call_tool("convert", args)
+
+    try:
+        result = asyncio.run(go())
+    except ToolError as exc:
+        return "error", str(exc)
+    contents = result[0] if isinstance(result, tuple) else result
+    return "ok", json.loads(contents[0].text)
+
+
+def _check(case: dict) -> tuple[bool, str, tuple[str, object]]:
+    """Run one golden case. Return (passed, reason, (status, reply))."""
+    status, reply = _call(case["args"])
+    if "error" in case:
+        if status != "error":
+            return False, f"expected error, got {reply!r}", (status, reply)
+        if case["error"] not in str(reply):
+            return False, f"error missing {case['error']!r}: {reply!r}", (status, reply)
+        return True, "", (status, reply)
+    if status != "ok":
+        return False, f"unexpected error: {reply!r}", (status, reply)
+    for key, want in case["expect"].items():
+        if reply.get(key) != want:  # type: ignore[union-attr]
+            return False, f"{key}: want {want!r}, got {reply.get(key)!r}", (status, reply)  # type: ignore[union-attr]
+    return True, "", (status, reply)
+
+
+def run(*, verbose: bool = False, human_readable: bool = False) -> tuple[int, int]:
+    """Run every golden case; print per the flags; return (passed, failed)."""
+    passed = failed = 0
+    for case in GOLDEN:
+        ok, reason, (status, reply) = _check(case)
+        passed += ok
+        failed += not ok
+        if verbose:
+            print(json.dumps({"request": case["args"],
+                              "reply": {"status": status, "body": reply}}))
+        if human_readable:
+            arrow = f"{case['args']['from_expr']} -> {case['args']['to_expr']}"
+            body = reply.get("result", reply) if status == "ok" else f"error: {reply}"
+            print(f"  {'PASS' if ok else 'FAIL'}  {arrow} = {body}"
+                  + (f"   [{reason}]" if not ok else ""))
+        elif not ok:
+            print(f"FAIL: {case['args']} — {reason}", file=sys.stderr)
+    print(f"convert e2e: {passed}/{passed + failed} passed")
+    return passed, failed
+
+
+def test_e2e_convert():
+    """Pytest entry point — quiet by default; fails if any golden pin regresses."""
+    _passed, failed = run()
+    assert failed == 0
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="convert tool end-to-end golden pins")
+    parser.add_argument("--verbose", action="store_true",
+                        help="print each request/reply as JSON")
+    parser.add_argument("--human-readable", action="store_true",
+                        help="print each conversion in a readable line")
+    ns = parser.parse_args()
+    _passed, failed = run(verbose=ns.verbose, human_readable=ns.human_readable)
+    sys.exit(1 if failed else 0)

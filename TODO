@@ -738,3 +738,32 @@ coverage 0%" is the common ding).
                `point_count`, and `noerror`. Tests: brwiregauge (16 points,
                output reduces to metres) and gasmark[degR] (oven-temperature
                lookup from the tables.py docstring).
+
+
+[x] 16.  TOOL — convert  (the universal conversion core; §13)
+    --------------------------------------------------------------------------
+    Wire Database.convert() (convert.py:81) into server.py as an @mcp.tool(),
+    same pattern as find_units (§14). This is the headline "transform between
+    units" tool — build it before anything else in §13.
+    [x] 16.1.  Register convert(from_expr, to_expr) with rich param descriptions
+               (Glama Tool-Definition-Quality). Return magnitude + exact/inexact
+               verdict; error cleanly on inconvertible/unknown units. DONE —
+               server.convert() wraps get_database().convert(); returns {from, to,
+               result, value, exact}; UnitsError -> clean ToolError. Registration
+               + happy-path + non-conformable tests in tests/test_server.py.
+    [x] 16.2.  Tests: end-to-end via mcp.call_tool + golden pins (1 mi -> km,
+               0 tempC -> tempF, 1 kW*h -> J, inconvertible errors cleanly). DONE
+               — tests/test_e2e_convert.py: dual pytest test (test_e2e_convert) +
+               runnable script (default prints only stats; --verbose prints
+               request/reply JSON; --human-readable prints readable lines).
+               105 tests pass; ruff + mypy clean.
+
+
+[ ] 17.  TOOL — convert_to_si  (reduce to SI base units; §13)
+    --------------------------------------------------------------------------
+    Wire Database.convert_to_si() (convert.py:107) into server.py as an
+    @mcp.tool(), same pattern as §16.
+    [ ] 17.1.  Register convert_to_si(expr) with rich param descriptions;
+               return the SI magnitude + base-unit signature + exact/inexact.
+    [ ] 17.2.  Tests: end-to-end via mcp.call_tool + a golden pin (e.g.
+               kW*h -> 3.6e6 J).

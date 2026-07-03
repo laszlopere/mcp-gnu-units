@@ -40,10 +40,10 @@ def _call_info_via_app() -> dict:
     return _call_via_app("info", {})
 
 
-def test_info_and_find_units_are_registered():
-    # §7.3.1 — info plus the first domain tool (find_units, §14.1) are exposed.
+def test_info_find_units_and_convert_are_registered():
+    # §7.3.1 — info plus the domain tools (find_units §14.1, convert §16.1).
     names = {t.name for t in asyncio.run(mcp.list_tools())}
-    assert {"info", "find_units"} <= names
+    assert {"info", "find_units", "convert"} <= names
 
 
 def test_tool_has_description_and_input_schema():
@@ -117,3 +117,22 @@ def test_find_units_no_match_returns_empty():
     payload = _call_via_app("find_units", {"query": "zzzznotaunit"})
     assert payload["count"] == 0
     assert payload["results"] == []
+
+
+def test_convert_invoke_through_app():
+    # §16.1 — happy path through the MCP layer (golden pins live in the e2e suite).
+    payload = _call_via_app("convert", {"from_expr": "1 mile", "to_expr": "km"})
+    assert payload["from"] == "1 mile"
+    assert payload["to"] == "km"
+    assert payload["result"] == "1.609344"
+    assert payload["exact"] is True
+
+
+def test_convert_non_conformable_errors_cleanly():
+    # §16.1 — inconvertible units surface a clean ToolError, not a traceback.
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    import pytest
+
+    with pytest.raises(ToolError, match="non-conformable"):
+        _call_via_app("convert", {"from_expr": "1 meter", "to_expr": "kg"})

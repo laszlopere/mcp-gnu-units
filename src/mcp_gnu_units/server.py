@@ -31,7 +31,7 @@ from mcp.types import ContentBlock
 from pydantic import Field, ValidationError
 
 from mcp_gnu_units import __version__
-from mcp_gnu_units.engine import get_database
+from mcp_gnu_units.engine import UnitsError, get_database
 from mcp_gnu_units.errors import format_validation_error
 
 
@@ -155,8 +155,64 @@ def find_units(
     return {"query": query, "count": len(results), "results": results}
 
 
+@mcp.tool()
+def convert(
+    from_expr: Annotated[
+        str,
+        Field(
+            description=(
+                "The quantity or unit expression to convert FROM. May carry a numeric "
+                "coefficient and be a compound expression: '2.5 acre*ft', '55 mile/hour', "
+                "'kW*h', '0 tempC'. A bare unit like 'mile' is treated as one of that unit."
+            ),
+            min_length=1,
+        ),
+    ],
+    to_expr: Annotated[
+        str,
+        Field(
+            description=(
+                "The unit expression to convert TO, e.g. 'km', 'gallons', 'joule', "
+                "'tempF'. Must be dimensionally conformable with `from_expr` (both length, "
+                "both energy, …) or a nonlinear target such as 'tempF'; otherwise the call "
+                "errors. Use find_units to discover the exact spelling of a unit."
+            ),
+            min_length=1,
+        ),
+    ],
+) -> dict:
+    """Convert a value or unit expression from one unit to another (GNU units engine, TODO §16).
+
+    The universal conversion core: one tool covers every category (length, mass,
+    time, temperature, area, volume, energy, power, speed, data, …) plus compound
+    expressions like `kW*h` or `acre*ft`. Linear conversions return the ratio of
+    coefficients; a nonlinear target (e.g. `tempF`) applies that unit's inverse.
+
+    Returns: `from` and `to` (echoed), `result` (the converted magnitude rendered
+    as a string — the primary answer), `value` (the same magnitude as a float for
+    programmatic use), and `exact` (true when the result is exact, false when it
+    was rounded).
+    Errors cleanly (isError) when a unit is unknown, an expression is malformed,
+    or the two sides are not conformable.
+    Example: convert("1 mile", "km") ->
+    {"from":"1 mile","to":"km","result":"1.609344","value":1.609344,"exact":true}
+    """
+    db = get_database()
+    try:
+        res = db.convert(from_expr, to_expr)
+    except UnitsError as exc:
+        raise ToolError(str(exc)) from exc
+    return {
+        "from": from_expr,
+        "to": to_expr,
+        "result": res.formatted,
+        "value": res.value.as_float(),
+        "exact": res.exact,
+    }
+
+
 # TODO §4.5 / FUTURE — remaining domain tools backed by the GNU units engine
-#           (convert, convert_to_si, define_unit, list_prefixes). find_units
-#           landed per §14.1; the rest follow.
+#           (convert_to_si, define_unit, list_prefixes). find_units landed per
+#           §14.1, convert per §16.1; the rest follow.
 #           When the engine version is surfaced, info() also reports the bundled
 #           GNU units database version it ships (§2.4 / §5.4).
