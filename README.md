@@ -17,10 +17,10 @@ by keyword, and look up the exact definition of any unit, prefix, or physical
 constant. Deterministic, dimension-aware, and free of the hardcoded per-category
 unit tables every other converter ships.
 
-> **Status: work in progress.** Live tools today: `info`, `find_units`,
-> `convert`. The remaining domain tools (`convert_to_si`, `define_unit`,
-> `list_prefixes`) are tracked in [`TODO`](TODO). The wording above is the
-> near-final searchable description but is not yet frozen for publication.
+> **Status: feature-complete, pre-release.** All five domain tools ship —
+> `find_units`, `convert`, `convert_to_si`, `define_unit`, and `list_prefixes` —
+> alongside the `info` health check. Not yet published to PyPI; the remaining
+> publish steps are tracked in [`TODO`](TODO).
 
 Distribution name: `mcp-gnu-units` · import package: `mcp_gnu_units`.
 

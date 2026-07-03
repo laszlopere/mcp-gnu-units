@@ -32,8 +32,15 @@ tool coverage is still growing (see [`TODO`](TODO)).
     definition, each hit enriched with its kind, base-unit dimension, and reduced
     base value so an agent can search and triage in one call.
   - `convert` — convert a value or compound unit expression from one unit to
-    another (e.g. `1 mi` → `km`, `1 kW*h` → `J`), returning the magnitude with an
-    exact/inexact verdict and a clean error on non-conformable or unknown units.
+    another (e.g. `1 mi` → `km`, `1 kW*hour` → `J`), returning the magnitude with
+    an exact/inexact verdict and a clean error on non-conformable or unknown units.
+  - `convert_to_si` — reduce a value or expression to SI base units (e.g.
+    `kW*hour` → `3600000 kg m^2 / s^2`), returning the magnitude, base-unit
+    signature, and exact/inexact verdict.
+  - `define_unit` — look up a single unit, prefix, physical constant, function, or
+    table: its definition, kind, dimension, and base reduction.
+  - `list_prefixes` — enumerate every SI and binary/IEC prefix with its multiplier,
+    sorted by descending magnitude.
 - **LLM-mangled-JSON tolerance.** Tool calls survive the broken JSON some LLM
   clients emit: stringified/double-encoded `arguments` (with single quotes,
   trailing commas, or barewords) are repaired in a stdio interposer before the

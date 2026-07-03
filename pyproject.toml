@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "mcp-gnu-units"
 version = "0.0.1"
-description = "Unit converter powered by the GNU units database — convert between 3000+ units of measurement, evaluate compound unit expressions, reduce quantities to SI base units, and look up unit definitions. Offline and deterministic."
+description = "Unit converter powered by the GNU units database — convert between 3000+ units of measurement, evaluate compound unit expressions, reduce quantities to SI base units, run dimensional analysis, and look up unit definitions. Offline and deterministic."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "GPL-3.0-or-later"
