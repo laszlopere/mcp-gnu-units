@@ -353,14 +353,27 @@ search/definition lookup.
     [ ] 7.7.  (OPTIONAL) pytest-cov — not added; skeleton doesn't require it.
 
 
-[ ] 8.  CI (minimal; mirror the mcp-bytesmith / mcp-tmux setup)
-    [ ] 8.0.  REFERENCE: the mcp-bytesmith project lives at ../mcp-bytesmith/
+[~] 8.  CI (minimal; mirror the mcp-bytesmith / mcp-tmux setup)
+    [x] 8.0.  REFERENCE: the mcp-bytesmith project lives at ../mcp-bytesmith/
               (sibling of this repo). It is a SEPARATE project — treat it as
               READ-ONLY: read its CI / publish config to copy the pattern, never
-              edit anything under it.
-    [ ] 8.1.  .github/workflows/ci.yml: on push/PR — set up uv, `uv sync`,
-              `uv run ruff check`, `uv run pytest`.
-    [ ] 8.2.  Pin action versions; run on a current Python (3.12+).
+              edit anything under it. DONE 2026-07-03 — read ../mcp-bytesmith/
+              .github/workflows/ci.yml + ../mcp-tmux/.github/workflows/ci.yml as
+              the pattern; nothing under the siblings was touched.
+    [x] 8.1.  .github/workflows/ci.yml: on push/PR — set up uv, `uv sync`,
+              `uv run ruff check`, `uv run pytest`. DONE 2026-07-03 —
+              .github/workflows/ci.yml added (mirrors bytesmith/tmux): checkout@v6
+              + setup-uv@v7 (per-Python cache-suffix), `uv sync --all-extras`, then
+              ruff check + ruff format --check + mypy + pytest -v. Runs on push to
+              master/main and all PRs. PRECONDITION FIXED so first run is green:
+              `tests/` carried committed ruff-lint (import order) + format drift
+              (the earlier "ruff clean" only covered src/); applied `ruff check
+              --fix` + `ruff format` (cosmetic only — jsonfix.py line-wrap,
+              test import order/wrapping). All four checks now pass locally on the
+              full repo (109 tests; ruff, ruff-format, mypy clean).
+    [~] 8.2.  Pin action versions; run on a current Python (3.12+). Action versions
+              pinned (checkout@v6, setup-uv@v7) and matrix is 3.10–3.13 (covers
+              3.12+ and the full requires-python range). Re-confirm at publish time.
     [ ] 8.3.  (LATER, not part of skeleton) PyPI publish workflow via Trusted
               Publishing on git tag — reuse the mcp-bytesmith pattern.
     [ ] 8.4.  Glama listing — add glama.json at repo root to claim ownership and

@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # §8.2 — run on a current Python (3.12+); the full range matches the
+        # project's requires-python >=3.10 and the classifiers (3.10–3.13).
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          # Distinct cache per matrix Python so the jobs don't race on one cache
+          # key ("Unable to reserve cache … another job may be creating").
+          cache-suffix: ${{ matrix.python-version }}
+
+      - name: Install the project
+        # Let uv manage a project venv; installing into the runner's system
+        # Python fails under PEP 668 (externally managed).
+        run: uv sync --all-extras --python ${{ matrix.python-version }}
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Format check (ruff)
+        run: uv run ruff format --check .
+
+      - name: Type-check (mypy)
+        run: uv run mypy
+
+      - name: Test (pytest)
+        # Pure-Python engine + bundled DB — no system units(1) binary needed,
+        # so the oracle tests self-skip and the suite runs fully offline.
+        run: uv run pytest -v
