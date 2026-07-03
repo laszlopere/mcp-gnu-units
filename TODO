@@ -423,7 +423,7 @@ repo is ever indexed by Glama — see §12.0.
                those only once the description is locked + the server is
                feature-complete (§17 convert_to_si + define_unit + list_prefixes
                still unbuilt).
-    [~] 10.2.  Repo metadata: `gh repo edit laszlopere/mcp-gnu-units --description
+    [x] 10.2.  Repo metadata: `gh repo edit laszlopere/mcp-gnu-units --description
                "<GitHub-repo form of the FINAL description>"` + set homepage.
                DESCRIPTION DONE 2026-07-03 — set via `gh repo edit --description`
                to: "Unit converter for AI agents, powered by the GNU units
@@ -435,10 +435,10 @@ repo is ever indexed by Glama — see §12.0.
                chars, under GitHub's 350 limit). This is the EDITABLE GitHub About
                text, NOT the frozen Glama search text (that stays the pyproject
                PRIMARY line, §12.0).
-               HOMEPAGE DEFERRED — left unset until §11 publishes to PyPI, then
-               point it at https://pypi.org/project/mcp-gnu-units/ (404s until
-               then). Topics still EMPTY on purpose (no `model-context-protocol`
-               yet — §10.3 / freeze guard).
+               HOMEPAGE DONE 2026-07-03 (after §11 publish) — set via `gh repo
+               edit --homepage https://pypi.org/project/mcp-gnu-units/`; verified.
+               So §10.2 is now fully complete. Topics still EMPTY of
+               `model-context-protocol` on purpose (§10.3 / freeze guard).
     [~] 10.3.  Topics: `gh repo edit laszlopere/mcp-gnu-units --add-topic mcp
                --add-topic model-context-protocol --add-topic mcp-server
                --add-topic units --add-topic unit-conversion --add-topic
@@ -531,7 +531,7 @@ repo is ever indexed by Glama — see §12.0.
                "Bundled data & provenance" section.
 
 
-[~] 11.  PUBLISH — PyPI  (trusted publishing / OIDC — no stored tokens)
+[x] 11.  PUBLISH — PyPI  (trusted publishing / OIDC — no stored tokens)
     [x] 11.0.  Mirror the mcp-abacus / mcp-bytesmith pattern exactly. DONE.
     [x] 11.1.  `.github/workflows/release.yml` — copy from ../mcp-bytesmith
                (READ-ONLY): on a `v*` tag it `uv build`s, `twine check`s, then a
@@ -566,17 +566,31 @@ repo is ever indexed by Glama — see §12.0.
                version → the built dist takes its version from pyproject, NOT the
                git tag) and rolled CHANGELOG [Unreleased] -> [0.1.0] - 2026-07-03
                so the published version matches the intended v0.1.0 tag.
-    [ ] 11.3.  ORDER MATTERS: register the pending publisher BEFORE the publish
+    [x] 11.3.  ORDER MATTERS: register the pending publisher BEFORE the publish
                job runs, else it fails "OIDC: project does not have a trusted
                publisher". If the tag predated the publisher, register then
                `gh run rerun <id> --failed` (build artifact is reused).
-    [ ] 11.4.  Tag + verify: `git tag -a v0.1.0 -m "..." && git push github
+               DONE — publisher registered (§11.2) BEFORE the tag; the publish job
+               authenticated via OIDC on the first try (no rerun needed).
+    [x] 11.4.  Tag + verify: `git tag -a v0.1.0 -m "..." && git push github
                v0.1.0`; then `curl -s https://pypi.org/pypi/mcp-gnu-units/json` → 200
                with the version + both `.whl` and `.tar.gz`. Install check:
                `uvx mcp-gnu-units`.
-    [ ] 11.5.  The PyPI SUMMARY = pyproject `description` = the FINAL description
+               DONE 2026-07-03 — annotated tag v0.1.0 pushed to github (+ origin);
+               Release workflow run 28642909643 green (build + publish). PyPI JSON
+               → HTTP 200, version 0.1.0, both bdist_wheel + sdist present. Install
+               check: `uv run --no-project --with mcp-gnu-units==0.1.0` pulls it
+               fresh from PyPI, imports at 0.1.0, engine loads, 1 mile -> 1.609344
+               km. (Non-fatal Node-20 deprecation warnings on upload/download-
+               artifact@v5 — cosmetic, same as siblings.)
+    [x] 11.5.  The PyPI SUMMARY = pyproject `description` = the FINAL description
                (bottom block). Lock it before the first publish — it is also the
                text Glama freezes (§12.0).
+               DONE — the published METADATA Summary is exactly the pyproject
+               description (the refined PRIMARY with "run dimensional analysis").
+               ⚠️ NOTE: PyPI's summary is editable on future releases, but this is
+               ALSO the string Glama will FREEZE at §10.3/§12 index time — so this
+               wording is now effectively the final search text.
 
 
 [ ] 12.  PUBLISH — GLAMA LISTING (+ scoring)   ⚠️ DESCRIPTION FROZEN AT INDEX
