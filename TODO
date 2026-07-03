@@ -531,14 +531,19 @@ repo is ever indexed by Glama — see §12.0.
                "Bundled data & provenance" section.
 
 
-[ ] 11.  PUBLISH — PyPI  (trusted publishing / OIDC — no stored tokens)
-    [ ] 11.0.  Mirror the mcp-abacus / mcp-bytesmith pattern exactly.
-    [ ] 11.1.  `.github/workflows/release.yml` — copy from ../mcp-bytesmith
+[~] 11.  PUBLISH — PyPI  (trusted publishing / OIDC — no stored tokens)
+    [x] 11.0.  Mirror the mcp-abacus / mcp-bytesmith pattern exactly. DONE.
+    [x] 11.1.  `.github/workflows/release.yml` — copy from ../mcp-bytesmith
                (READ-ONLY): on a `v*` tag it `uv build`s, `twine check`s, then a
                second job (`environment: pypi`, `permissions: id-token: write`)
                runs `pypa/gh-action-pypi-publish`. Publishing = push a `vX.Y.Z`
-               tag.
-    [ ] 11.2.  ONE-TIME: register a PENDING trusted publisher on PyPI BEFORE the
+               tag. DONE 2026-07-03 — .github/workflows/release.yml added verbatim
+               to the bytesmith pattern (name "Release", on push tags v*, build
+               job: checkout@v6 + setup-uv@v7 + `uv build` + `uvx twine check` +
+               upload-artifact@v5; publish job: needs build, environment pypi,
+               id-token: write, download-artifact@v5 + pypa/gh-action-pypi-publish
+               @release/v1). YAML validates.
+    [x] 11.2.  ONE-TIME: register a PENDING trusted publisher on PyPI BEFORE the
                first tag — USE THE EXISTING LOGGED-IN BROWSER SESSION to pypi.org
                via the chrome-devtools MCP tools. pypi.org → Your account →
                Publishing (/manage/account/publishing/). Sensitive action →
@@ -553,6 +558,14 @@ repo is ever indexed by Glama — see §12.0.
                → Add. `fill_form` the five fields + click Add; the `#errors` URL
                hash is just an anchor — confirm by the row appearing under
                "Pending publishers".
+               DONE 2026-07-03 — registered via the chrome-devtools MCP browser
+               (user confirmed the sensitive-action password). Row now under
+               "Pending publishers": mcp-gnu-units · GitHub ·
+               laszlopere/mcp-gnu-units · workflow release.yml · environment pypi.
+               Also this session: BUMPED pyproject version 0.0.1 -> 0.1.0 (static
+               version → the built dist takes its version from pyproject, NOT the
+               git tag) and rolled CHANGELOG [Unreleased] -> [0.1.0] - 2026-07-03
+               so the published version matches the intended v0.1.0 tag.
     [ ] 11.3.  ORDER MATTERS: register the pending publisher BEFORE the publish
                job runs, else it fails "OIDC: project does not have a trusted
                publisher". If the tag predated the publisher, register then

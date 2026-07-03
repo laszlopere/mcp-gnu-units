@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Initial development toward the first public release. Not yet published to PyPI;
-tool coverage is still growing (see [`TODO`](TODO)).
+## [0.1.0] - 2026-07-03
+
+First public release: a feature-complete, offline GNU units MCP server with all
+five domain tools plus the `info` health check.
 
 ### Added
 - **Pure-Python GNU units engine.** An independent parser + evaluator for the
