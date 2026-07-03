@@ -1,17 +1,26 @@
 # mcp-gnu-units
 
-[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![CI](https://github.com/laszlopere/mcp-gnu-units/actions/workflows/ci.yml/badge.svg)](https://github.com/laszlopere/mcp-gnu-units/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2.svg)](https://github.com/sponsors/laszlopere)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Checked with mypy](https://img.shields.io/badge/mypy-checked-2a6db2.svg)](https://mypy-lang.org/)
+[![Last commit](https://img.shields.io/github/last-commit/laszlopere/mcp-gnu-units.svg)](https://github.com/laszlopere/mcp-gnu-units/commits)
 
-A pure-Python [Model Context Protocol](https://modelcontextprotocol.io) server,
-built on the official MCP SDK (FastMCP), exposing precise, offline unit
-conversion and dimensional analysis backed by the GNU units database.
+mcp-gnu-units is an MCP server that gives AI agents precise, offline unit
+conversion backed by the GNU units database. Convert between 3000+ units of
+measurement — length, mass, time, temperature, area, volume, energy, power,
+pressure, speed, data and more — evaluate compound unit expressions like `kW*h`
+or `acre*ft`, reduce any quantity to its SI base units, search the unit database
+by keyword, and look up the exact definition of any unit, prefix, or physical
+constant. Deterministic, dimension-aware, and free of the hardcoded per-category
+unit tables every other converter ships.
 
-> **Status: skeleton / work in progress.** The server currently exposes an
-> `info` availability/version tool plus the first conversion tools (`find_units`,
-> `convert`); the remaining domain tools are tracked in [`TODO`](TODO). The final
-> searchable description and sponsorship section land at publish time
-> (TODO §10.5) — do not treat this README as final.
+> **Status: work in progress.** Live tools today: `info`, `find_units`,
+> `convert`. The remaining domain tools (`convert_to_si`, `define_unit`,
+> `list_prefixes`) are tracked in [`TODO`](TODO). The wording above is the
+> near-final searchable description but is not yet frozen for publication.
 
 Distribution name: `mcp-gnu-units` · import package: `mcp_gnu_units`.
 
@@ -47,6 +56,19 @@ independent implementation; GNU units supplies the data.
 
 Full attribution, version pins, and checksums are recorded in
 [`NOTICE`](NOTICE).
+
+## Sponsoring
+
+mcp-gnu-units is free, open-source software developed in my spare time.
+Sponsoring keeps this project alive and actively maintained — it funds new
+units-engine features, bug fixes, and ongoing support, and it's a direct signal
+that the work is worth continuing.
+
+If the project is useful to you, please consider sponsoring it through
+**[GitHub Sponsors](https://github.com/sponsors/laszlopere)**. Click the
+**Sponsor** button at the top of the repository, or visit the link directly, and
+pick a one-time or recurring tier. Every contribution, large or small, is hugely
+appreciated and goes straight back into keeping mcp-gnu-units healthy.
 
 ## License
 

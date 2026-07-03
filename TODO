@@ -457,7 +457,7 @@ repo is ever indexed by Glama — see §12.0.
                the pyproject PRIMARY line — is still under review (differs from the
                GitHub About text). Add `model-context-protocol` only after both are
                settled (ties to §12.0 / the PUBLISHING preamble).
-    [~] 10.4.  SPONSORSHIP — enable GitHub Sponsors:
+    [x] 10.4.  SPONSORSHIP — enable GitHub Sponsors:
         [x] 10.4.1.  Add `.github/FUNDING.yml` (copy the pattern from the sibling
                      ../mcp-bytesmith/.github/FUNDING.yml — READ-ONLY, don't edit
                      it) with the user's sponsor accounts (github: laszlopere,
@@ -466,16 +466,28 @@ repo is ever indexed by Glama — see §12.0.
                      family pattern (`github: [laszlopere]`; ko-fi/liberapay/custom
                      left as commented examples). YAML validates. Renders once
                      pushed to the github remote (USER push).
-        [ ] 10.4.2.  Ensure GitHub Sponsors is enabled at the account level so
-                     the button is live (one-time; USER action). PENDING — one-time
-                     account-level step at github.com/sponsors/laszlopere; already
-                     satisfied for the sibling repos, so likely already on.
-    [ ] 10.5.  LICENSE (GPL-3.0-or-later) + README.md at repo root (from §1-2).
-        [ ] 10.5.1.  README OPENING — the intro paragraph (before any `##`
+        [x] 10.4.2.  Ensure GitHub Sponsors is enabled at the account level so
+                     the button is live (one-time; USER action). DONE 2026-07-03 —
+                     USER confirmed GitHub Sponsors is enabled at the account
+                     level; with .github/FUNDING.yml now on the github remote
+                     (§10.4.1), the "Sponsor" button renders on the repo.
+    [x] 10.5.  LICENSE (GPL-3.0-or-later) + README.md at repo root (from §1-2).
+        [x] 10.5.1.  README OPENING — the intro paragraph (before any `##`
                      heading) = the LONG-form FINAL description (bottom block).
                      It is rendered verbatim as the Glama Overview body, so keep
                      that searchable wording as the lead.
-        [~] 10.5.2.  FIRST section = a HOMAGE to the original `units` package
+                     DONE 2026-07-03 — README opening paragraph replaced with the
+                     LONG-form FINAL description verbatim (leads "mcp-gnu-units is
+                     an MCP server that gives AI agents precise, offline unit
+                     conversion…"). An honest WIP status note follows it (live
+                     tools info/find_units/convert; convert_to_si/define_unit/
+                     list_prefixes still planned) since the FINAL text names tools
+                     not yet shipped — the note is the safeguard, the lead wording
+                     is the near-final searchable copy. Also refreshed the badge
+                     row to the mcp-* family set (CI, Python, License, Sponsor,
+                     Ruff, mypy, last-commit); PyPI + Glama badges HELD until §11/
+                     §12 (they'd render broken pre-publish).
+        [x] 10.5.2.  FIRST section = a HOMAGE to the original `units` package
                      this server stands on. Credit GNU units (it supplies the
                      unit database + conversion semantics), keep it a genuine
                      "built on the shoulders of" note (not a disclaimer), and
@@ -487,10 +499,20 @@ repo is ever indexed by Glama — see §12.0.
                      section now leads the README, credits Mariano/FSF, links the
                      project, and references the bundled DB. Re-confirm wording at
                      publish time alongside the §10.5.1 description swap.
-        [ ] 10.5.3.  SPONSORSHIP section — add a short "Sponsorship" section
+                     RE-CONFIRMED 2026-07-03 alongside the §10.5.1 swap — the
+                     homage stays the FIRST `##` section (right after the LONG-form
+                     opening), genuine "shoulders of" tone intact, links
+                     gnu.org/software/units + the bundled-data section. Marking
+                     complete; final light polish still allowed at publish time.
+        [x] 10.5.3.  SPONSORSHIP section — add a short "Sponsorship" section
                      containing the line "Sponsoring keeps this project alive"
                      plus the GitHub Sponsors link/button (ties to §10.4 /
                      .github/FUNDING.yml).
+                     DONE 2026-07-03 — added a "## Sponsoring" section (family
+                     heading, matches mcp-bytesmith/-abacus) that opens with the
+                     literal line "Sponsoring keeps this project alive …" and links
+                     **[GitHub Sponsors](https://github.com/sponsors/laszlopere)** +
+                     points at the repo's Sponsor button (live via §10.4).
     [~] 10.6.  CHANGELOG.md at repo root (siblings carry one). Each release's
                section is the source for the GitHub Release notes body — which
                Glama copies VERBATIM as the release changelog (§12.2) — so author
