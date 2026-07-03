@@ -102,9 +102,17 @@ def run(*, verbose: bool = False, human_readable: bool = False) -> tuple[int, in
     return passed, failed
 
 
-def test_e2e_convert():
-    """Pytest entry point — quiet by default; fails if any golden pin regresses."""
-    _passed, failed = run()
+def test_e2e_convert(request):
+    """Pytest entry point — quiet by default; fails if any golden pin regresses.
+
+    Honors ./run-tests.sh's switches: `--human-readable` frames each conversion
+    as a readable line, `--verbose`/`-v` prints request/reply JSON (both need
+    capture off, which run-tests.sh supplies via -s). --human-readable wins when
+    both are given, matching the mcp-abacus conftest.
+    """
+    human_readable = request.config.getoption("--human-readable")
+    verbose = not human_readable and request.config.option.verbose >= 1
+    _passed, failed = run(verbose=verbose, human_readable=human_readable)
     assert failed == 0
 
 
