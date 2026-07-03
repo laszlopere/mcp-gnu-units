@@ -650,7 +650,13 @@ conformable claims.
 PRIMARY  (pyproject `description` = PyPI summary = Glama FROZEN search text):
   "Unit converter powered by the GNU units database — convert between 3000+
    units of measurement, evaluate compound unit expressions, reduce quantities
-   to SI base units, and look up unit definitions. Offline and deterministic."
+   to SI base units, run dimensional analysis, and look up unit definitions.
+   Offline and deterministic."
+  REFINED 2026-07-03 (agent judgment, user away): inserted "run dimensional
+   analysis" — the uncontested keyword we own (matches the GitHub About text the
+   user chose in §10.2). Applied to pyproject.toml; still REVERSIBLE (nothing
+   freezes until the §10.3 model-context-protocol topic is added). ⚠️ CONFIRM this
+   wording before adding that topic — the freeze is permanent.
 
 GITHUB repo description  (shorter, same lead word):
   "Unit conversion MCP server powered by the GNU units database: convert 3000+
@@ -891,3 +897,44 @@ coverage 0%" is the common ding).
                ./run-tests.sh's --verbose (request/reply JSON) + --human-readable
                (readable "expr -> SI = result" lines) exactly like the convert
                e2e. 112 tests pass; ruff + ruff-format + mypy clean.
+
+
+[x] 18.  TOOL — define_unit  (show a unit/prefix/constant definition; §13)
+    --------------------------------------------------------------------------
+    Wire Database.describe() (convert.py:141) into server.py as an @mcp.tool(),
+    same pattern as §16/§17. The inspect/"define" counterpart to convert.
+    [x] 18.1.  Register define_unit(name) with a rich param description; return
+               the describe() dict (name, kind, definition, dimension, base_value,
+               and the structured `function` object for nonlinear units). DONE
+               2026-07-03 — server.define_unit() wraps get_database().describe();
+               an undefined name (describe returns just {"name": …} with no `kind`)
+               is turned into a clean ToolError instead of a bare dict. Works for
+               units, primitives, prefixes, physical constants, functions (tempF
+               carries {signature, input_dimensions, output_dimension}), and
+               tables. Tests: tests/test_server.py — define_unit newton (kind/
+               dimension/base_value) + unknown -> clean ToolError.
+               (Pre-existing engine quirk noted, NOT in scope here: describe('c')
+               classifies the speed-of-light constant as kind "prefix"; a describe/
+               classification fix belongs with §15, not §18.)
+
+
+[x] 19.  TOOL — list_prefixes  (enumerate SI/binary prefixes; §13)
+    --------------------------------------------------------------------------
+    Wire Database.list_prefixes() (convert.py:132) into server.py as an
+    @mcp.tool(), same pattern as §16/§17.
+    [x] 19.1.  Register list_prefixes() (no params); return {count, prefixes:
+               [{name, multiplier}]} sorted by descending magnitude. DONE
+               2026-07-03 — server.list_prefixes() wraps
+               get_database().list_prefixes(); 125 prefixes (SI decimal ladder
+               quetta…quecto + symbols, plus binary/IEC kibi/Ki…). Tests: tests/
+               test_server.py — count == len(prefixes), kilo=="1000", kibi=="1024".
+
+
+  ── §13 DOMAIN TOOLS: ALL FIVE SHIP (2026-07-03) ──────────────────────────────
+  find_units (§14) · convert (§16) · convert_to_si (§17) · define_unit (§18) ·
+  list_prefixes (§19), alongside info (§5). The server is FEATURE-COMPLETE — this
+  clears precondition #1 for the §10.3 `model-context-protocol` topic (the Glama
+  index/description-FREEZE trigger). Remaining precondition #2: LOCK the pyproject
+  PRIMARY description before adding that topic (§12.0). 115 tests pass; ruff +
+  ruff-format + mypy clean. README status note + CHANGELOG updated to the full
+  five-tool set.

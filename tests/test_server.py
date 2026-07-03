@@ -41,10 +41,17 @@ def _call_info_via_app() -> dict:
 
 
 def test_info_find_units_and_convert_are_registered():
-    # §7.3.1 — info plus the domain tools (find_units §14.1, convert §16.1,
-    # convert_to_si §17.1).
+    # §7.3.1 — info plus the five §13 domain tools (find_units §14.1, convert
+    # §16.1, convert_to_si §17.1, define_unit + list_prefixes §13).
     names = {t.name for t in asyncio.run(mcp.list_tools())}
-    assert {"info", "find_units", "convert", "convert_to_si"} <= names
+    assert {
+        "info",
+        "find_units",
+        "convert",
+        "convert_to_si",
+        "define_unit",
+        "list_prefixes",
+    } <= names
 
 
 def test_tool_has_description_and_input_schema():
@@ -157,3 +164,31 @@ def test_convert_to_si_nonlinear_errors_cleanly():
 
     with pytest.raises(ToolError):
         _call_via_app("convert_to_si", {"expr": "tempF"})
+
+
+def test_define_unit_invoke_through_app():
+    # §13 — a known unit reports its kind, definition, and base reduction.
+    payload = _call_via_app("define_unit", {"name": "newton"})
+    assert payload["name"] == "newton"
+    assert payload["kind"] == "unit"
+    assert payload["dimension"] == "kg m / s^2"
+    assert payload["base_value"].endswith("kg m / s^2")
+
+
+def test_define_unit_unknown_errors_cleanly():
+    # §13 — an undefined name surfaces a clean ToolError, not {"name": ...}.
+    import pytest
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    with pytest.raises(ToolError, match="not defined"):
+        _call_via_app("define_unit", {"name": "zzznotaunit"})
+
+
+def test_list_prefixes_invoke_through_app():
+    # §13 — every prefix + multiplier, sorted; known members present.
+    payload = _call_via_app("list_prefixes", {})
+    assert payload["count"] == len(payload["prefixes"])
+    assert payload["count"] > 40  # SI ladder + binary/IEC prefixes
+    by_name = {p["name"]: p["multiplier"] for p in payload["prefixes"]}
+    assert by_name["kilo"] == "1000"
+    assert by_name["kibi"] == "1024"

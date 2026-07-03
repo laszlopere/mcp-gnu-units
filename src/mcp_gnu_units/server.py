@@ -267,8 +267,75 @@ def convert_to_si(
     }
 
 
-# TODO §4.5 / FUTURE — remaining domain tools backed by the GNU units engine
-#           (define_unit, list_prefixes). find_units landed per §14.1, convert
-#           per §16.1, convert_to_si per §17.1; the rest follow.
-#           info() reports the bundled GNU units database version it ships via
-#           `units_db` (§2.4.6 / §5.4).
+@mcp.tool()
+def define_unit(
+    name: Annotated[
+        str,
+        Field(
+            description=(
+                "The exact name of a single unit, prefix, physical constant, function, "
+                "or table to look up — e.g. 'horsepower', 'kilo', 'newton', 'tempF', "
+                "'brwiregauge'. This is a definition lookup, not an expression evaluator: "
+                "pass one database name, not a compound expression like 'kW*hour'. Use "
+                "find_units first if you are unsure of the exact spelling."
+            ),
+            min_length=1,
+        ),
+    ],
+) -> dict:
+    """Show a single unit/prefix/constant's definition, kind, dimension, and base value (TODO §13).
+
+    Looks up one name in the GNU units database and reports exactly what it is and
+    what it reduces to — the inspect/"define" counterpart to `convert`. Works for
+    ordinary units, SI/binary prefixes, physical constants, nonlinear function
+    units (`tempF`), and piecewise tables (`brwiregauge`).
+
+    Returns an object with:
+      - `name`       : echoed.
+      - `kind`       : "unit" | "primitive" | "prefix" | "function" | "table".
+      - `definition` : the database definition text (source line, leading name
+                       token removed). "!" marks a primitive/base unit.
+      - `dimension`  : base-unit signature, e.g. "kg m^2 / s^3" for power; "1" when
+                       dimensionless. Omitted for hits that do not reduce.
+      - `base_value` : the unit reduced to base units with its coefficient, e.g.
+                       "745.699871582 kg m^2 / s^3". Omitted alongside `dimension`.
+      - `function`   : for nonlinear units only — {signature, input_dimensions,
+                       output_dimension} describing the conversion function.
+    Errors cleanly (isError) when the name is not defined in the database.
+    Example: define_unit("newton") ->
+    {"name":"newton","kind":"unit","definition":"kg m / s^2",
+    "base_value":"1 kg m / s^2","dimension":"kg m / s^2"}
+    """
+    info = get_database().describe(name)
+    if "kind" not in info:
+        raise ToolError(f"'{name}' is not defined in the GNU units database")
+    return info
+
+
+@mcp.tool()
+def list_prefixes() -> dict:
+    """List every SI and binary prefix in the GNU units database with its multiplier (TODO §13).
+
+    Enumerates all defined prefixes — the SI decimal ladder (`quetta`…`quecto` and
+    their symbols `Q`…`q`) plus the binary/IEC prefixes (`kibi`/`Ki`, `mebi`/`Mi`,
+    …) — sorted by descending magnitude. Useful for discovering the exact prefix
+    spelling to use in a `convert` or `convert_to_si` expression, or for seeing a
+    prefix's exact numeric value.
+
+    Returns: `count` (number of prefixes) and `prefixes`, a list of objects each
+    with `name` (the prefix, without its trailing hyphen) and `multiplier` (its
+    value as a string, exact where the value is an exact integer, e.g. `kibi` ->
+    "1024", `mega` -> "1000000").
+    Example: list_prefixes() ->
+    {"count":125,"prefixes":[{"name":"quetta","multiplier":"1000000000000000000000000000000"},
+    ...,{"name":"kibi","multiplier":"1024"}, ...]}
+    """
+    prefixes = [
+        {"name": name, "multiplier": value} for name, value in get_database().list_prefixes()
+    ]
+    return {"count": len(prefixes), "prefixes": prefixes}
+
+
+# All five §13 domain tools now ship: find_units (§14.1), convert (§16.1),
+# convert_to_si (§17.1), define_unit + list_prefixes (§13). info() reports the
+# bundled GNU units database version it ships via `units_db` (§2.4.6 / §5.4).
