@@ -53,3 +53,13 @@ def test_info_toolsets_is_empty_list():
     payload = info()
     assert isinstance(payload["toolsets"], list)
     assert payload["toolsets"] == []
+
+
+def test_info_reports_bundled_db_version():
+    # §2.4.6 / §5.4 — info() surfaces the bundled GNU units DB version.
+    units_db = info()["units_db"]
+    assert isinstance(units_db, dict)
+    assert units_db["source"] == "GNU units"
+    # Parsed from the shipped file header, so it matches the pinned data version.
+    assert units_db["data_version"] == "3.26"
+    assert units_db["data_updated"] == "2026-02-25"

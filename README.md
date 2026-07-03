@@ -7,13 +7,29 @@ A pure-Python [Model Context Protocol](https://modelcontextprotocol.io) server,
 built on the official MCP SDK (FastMCP), exposing precise, offline unit
 conversion and dimensional analysis backed by the GNU units database.
 
-> **Status: skeleton / work in progress.** The server currently exposes a single
-> `info` availability/version tool; the conversion engine and domain tools are
-> tracked in [`TODO`](TODO). The final searchable description, homage to GNU
-> units, and sponsorship sections land at publish time (TODO §10.5) — do not
-> treat this README as final.
+> **Status: skeleton / work in progress.** The server currently exposes an
+> `info` availability/version tool plus the first conversion tools (`find_units`,
+> `convert`); the remaining domain tools are tracked in [`TODO`](TODO). The final
+> searchable description and sponsorship section land at publish time
+> (TODO §10.5) — do not treat this README as final.
 
 Distribution name: `mcp-gnu-units` · import package: `mcp_gnu_units`.
+
+## Built on GNU units
+
+This project stands on the shoulders of
+[GNU units](https://www.gnu.org/software/units/), the units-conversion program
+written and maintained by Adrian Mariano for the Free Software Foundation. Its
+database is the product of decades of careful curation — thousands of units,
+physical constants drawn from CODATA and NIST, and the conversion semantics that
+make dimensional analysis trustworthy. This server would not exist without it.
+
+`mcp-gnu-units` bundles that database **verbatim** (see
+[Bundled data & provenance](#bundled-data--provenance) below) and pairs it with
+an independent, pure-Python conversion engine, so every number it returns traces
+straight back to GNU units' own definitions. It is offered in the same spirit
+and under the same license (GPL-3.0-or-later). If you find this useful, the
+original earns the credit first: <https://www.gnu.org/software/units/>.
 
 ## Bundled data & provenance
 

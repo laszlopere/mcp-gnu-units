@@ -33,6 +33,7 @@ from .errors import (
     UndefinedUnitError,
     UnitsError,
 )
+from .loader import database_version
 from .number import Number
 from .quantity import Quantity
 from .symbols import LoadConfig
@@ -42,6 +43,7 @@ __all__ = [
     "ConversionResult",
     "Database",
     "Dimension",
+    "database_version",
     "DomainError",
     "LoadConfig",
     "NotConformableError",

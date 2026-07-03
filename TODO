@@ -138,13 +138,23 @@ search/definition lookup.
                     c4126ed; ships via license-files + sdist include).
         [x] 2.4.4.  Document the bundled-data provenance in README. DONE —
                     "Bundled data & provenance" section, references NOTICE.
-        [ ] 2.4.5.  Reference the bundled DB from the README HOMAGE section too
+        [x] 2.4.5.  Reference the bundled DB from the README HOMAGE section too
                     (the publish-time first-section homage to GNU units) —
-                    tracked with §10.5.2. The provenance section (2.4.4) exists
-                    now; the homage is still TODO.
-        [ ] 2.4.6.  Surface the bundled DB version from info() (§5.4): extend
-                    info() to report engine/database version. DEFERRED to engine
-                    work (no engine yet).
+                    tracked with §10.5.2. DONE 2026-07-03 — added a "Built on GNU
+                    units" homage as the README's first content section (credits
+                    Adrian Mariano / FSF, links gnu.org/software/units, genuine
+                    "shoulders of" tone), and it references the bundled DB via a
+                    link to the "Bundled data & provenance" section. §10.5.2's
+                    full publish-time homage builds on this section.
+        [x] 2.4.6.  Surface the bundled DB version from info() (§5.4): extend
+                    info() to report engine/database version. DONE 2026-07-03 —
+                    engine.database_version() parses the shipped definitions.units
+                    header (`# Version 3.26` / `# Last updated …`, ISO-normalized
+                    with a raw fallback) so the version can't drift from the file
+                    actually bundled; info() now returns a `units_db` key
+                    {source, data_version, data_updated}. Best-effort + wrapped so
+                    the health check never crashes. Tests: test_info.py +
+                    engine/test_loader.py (parse, typo tolerance, raw fallback).
         [x] 2.4.7.  Write the grammar/format spec for the DB language as the
                     parser's contract. DONE 2026-06-19 — docs/definitions-format.md
                     (EBNF + operator precedence incl. the juxtaposition-vs-`/`
@@ -290,9 +300,10 @@ search/definition lookup.
               Verified through the MCP layer: exactly ONE tool exposed.
     [x] 5.3.  Docstring + typed return -> FastMCP auto-generates the input
               schema; description + schema confirmed present.
-    [x] 5.4.  Pure stdlib (platform, importlib.metadata) — no new deps. FUTURE:
-              info() also reports the bundled GNU units DB version once the
-              engine lands (§2.4); a comment in server.py marks that.
+    [x] 5.4.  Pure stdlib (platform, importlib.metadata) — no new deps. DONE
+              (§2.4.6, 2026-07-03): info() now also reports the bundled GNU units
+              DB version via a `units_db` key, parsed from the shipped file's own
+              header (engine.database_version()) so it can't drift.
 
 
 [x] 6.  RUN & VERIFY
@@ -409,7 +420,7 @@ repo is ever indexed by Glama — see §12.0.
                      heading) = the LONG-form FINAL description (bottom block).
                      It is rendered verbatim as the Glama Overview body, so keep
                      that searchable wording as the lead.
-        [ ] 10.5.2.  FIRST section = a HOMAGE to the original `units` package
+        [~] 10.5.2.  FIRST section = a HOMAGE to the original `units` package
                      this server stands on. Credit GNU units (it supplies the
                      unit database + conversion semantics), keep it a genuine
                      "built on the shoulders of" note (not a disclaimer), and
@@ -417,6 +428,10 @@ repo is ever indexed by Glama — see §12.0.
                        https://www.gnu.org/software/units/
                      (Adrian Mariano / FSF; GPL-3.0-or-later — the same license we
                      use, see the positioning header).
+                     STARTED 2026-07-03 (§2.4.5): the "Built on GNU units" homage
+                     section now leads the README, credits Mariano/FSF, links the
+                     project, and references the bundled DB. Re-confirm wording at
+                     publish time alongside the §10.5.1 description swap.
         [ ] 10.5.3.  SPONSORSHIP section — add a short "Sponsorship" section
                      containing the line "Sponsoring keeps this project alive"
                      plus the GitHub Sponsors link/button (ties to §10.4 /

@@ -27,6 +27,7 @@ lives in the evaluator.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from importlib.resources import files
 
@@ -43,6 +44,61 @@ _DATA_FILE = "definitions.units"
 def read_database_text() -> str:
     """Read the bundled definitions file as text via importlib.resources."""
     return (files(_DATA_PACKAGE) / _DATA_FILE).read_text(encoding="utf-8")
+
+
+# The bundled definitions.units carries its own version + date in the top comment
+# block (`# Version 3.26` / `# Last updated 25 Febuary 2026`). We read them from
+# there rather than pinning a constant, so the reported version can never drift
+# from the file actually shipped (TODO §2.4.6 / §5.4).
+_VERSION_RE = re.compile(r"^#\s*Version\s+(\S+)", re.MULTILINE)
+_UPDATED_RE = re.compile(r"^#\s*Last updated\s+(.+?)\s*$", re.MULTILINE)
+_MONTHS = {
+    m: i
+    for i, m in enumerate(
+        ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"),
+        start=1,
+    )
+}
+
+
+def database_version(*, text: str | None = None) -> dict[str, str]:
+    """Report the bundled GNU units database version, parsed from its header.
+
+    Returns ``source`` ("GNU units") plus, when present in the file header,
+    ``data_version`` (e.g. "3.26") and ``data_updated`` (ISO date, e.g.
+    "2026-02-25", falling back to the raw header text if it can't be normalized).
+    Only the top comment block is scanned, so this stays cheap enough for the
+    ``info`` health check to call without loading the whole database.
+    """
+    source = read_database_text() if text is None else text
+    header = source[:4000]  # version + date live in the leading comment block
+    result: dict[str, str] = {"source": "GNU units"}
+    version_match = _VERSION_RE.search(header)
+    if version_match:
+        result["data_version"] = version_match.group(1)
+    updated_match = _UPDATED_RE.search(header)
+    if updated_match:
+        raw = updated_match.group(1)
+        result["data_updated"] = _iso_date(raw) or raw
+    return result
+
+
+def _iso_date(text: str) -> str | None:
+    """Normalize a ``25 Febuary 2026``-style header date to ISO ``2026-02-25``.
+
+    Best-effort: matches the upstream ``day month year`` form (tolerating the
+    file's ``Febuary`` typo by keying on the month's first three letters) and
+    returns ``None`` on anything it doesn't recognize, so the caller keeps the
+    raw string instead.
+    """
+    parts = text.split()
+    if len(parts) != 3:
+        return None
+    day, month, year = parts
+    mon = _MONTHS.get(month[:3].lower())
+    if mon is None or not day.isdigit() or not year.isdigit():
+        return None
+    return f"{int(year):04d}-{mon:02d}-{int(day):02d}"
 
 
 def load(config: LoadConfig | None = None, *, text: str | None = None) -> SymbolTable:

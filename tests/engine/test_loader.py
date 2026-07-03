@@ -2,7 +2,7 @@
 
 from mcp_gnu_units.engine.directives import DirectiveProcessor
 from mcp_gnu_units.engine.functions import FunctionUnit
-from mcp_gnu_units.engine.loader import _logical_lines, load
+from mcp_gnu_units.engine.loader import _logical_lines, database_version, load
 from mcp_gnu_units.engine.symbols import (
     DerivedUnit,
     LoadConfig,
@@ -55,13 +55,7 @@ def test_logical_line_continuation_and_comments():
 
 def test_directive_gating_varnot():
     # A definition inside a non-matching !var block is dropped; outside, kept.
-    text = (
-        "m !\n"
-        "!var UNITS_SYSTEM cgs\n"
-        "gated_unit 5 m\n"
-        "!endvar\n"
-        "kept_unit 3 m\n"
-    )
+    text = "m !\n!var UNITS_SYSTEM cgs\ngated_unit 5 m\n!endvar\nkept_unit 3 m\n"
     st = load(LoadConfig(units_system="default"), text=text)
     assert "gated_unit" not in st.units
     assert "kept_unit" in st.units
@@ -84,3 +78,26 @@ def test_unitlist_captured():
     text = "hour 3600 s\n!unitlist hms hr;min;sec\n"
     st = load(text=text)
     assert st.unitlists.get("hms") == ["hr", "min", "sec"]
+
+
+def test_database_version_reads_bundled_header():
+    # §2.4.6 — version + date come from the shipped file's own header.
+    ver = database_version()
+    assert ver["source"] == "GNU units"
+    assert ver["data_version"] == "3.26"
+    assert ver["data_updated"] == "2026-02-25"
+
+
+def test_database_version_normalizes_header_date():
+    # Tolerates the upstream 'Febuary' typo; ISO-normalizes day/month/year.
+    text = "# Version 9.9\n# Last updated 3 Febuary 2030\nm !\n"
+    ver = database_version(text=text)
+    assert ver["data_version"] == "9.9"
+    assert ver["data_updated"] == "2030-02-03"
+
+
+def test_database_version_keeps_raw_date_when_unparseable():
+    text = "# Version 1.0\n# Last updated sometime soon\nm !\n"
+    ver = database_version(text=text)
+    assert ver["data_version"] == "1.0"
+    assert ver["data_updated"] == "sometime soon"

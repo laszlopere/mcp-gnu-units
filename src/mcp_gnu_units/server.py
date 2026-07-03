@@ -31,7 +31,7 @@ from mcp.types import ContentBlock
 from pydantic import Field, ValidationError
 
 from mcp_gnu_units import __version__
-from mcp_gnu_units.engine import UnitsError, get_database
+from mcp_gnu_units.engine import UnitsError, database_version, get_database
 from mcp_gnu_units.errors import format_validation_error
 
 
@@ -53,9 +53,7 @@ class _GnuUnitsFastMCP(FastMCP):
             return await super().call_tool(name, arguments)
         except ToolError as exc:
             if isinstance(exc.__cause__, ValidationError):
-                raise ToolError(
-                    format_validation_error(name, exc.__cause__)
-                ) from exc.__cause__
+                raise ToolError(format_validation_error(name, exc.__cause__)) from exc.__cause__
             raise
 
 
@@ -76,16 +74,23 @@ mcp = _GnuUnitsFastMCP(
 def info() -> dict:
     """Discovery / health-check entrypoint: report availability and version info.
 
-    Returns six keys: `status` ("available"), `name`, `version` (package version),
-    `python` (runtime version), `mcp_sdk` (MCP SDK version, or "unknown"), and
-    `toolsets` (empty until the GNU units engine lands).
+    Returns seven keys: `status` ("available"), `name`, `version` (package version),
+    `python` (runtime version), `mcp_sdk` (MCP SDK version, or "unknown"),
+    `toolsets` (empty until the GNU units engine lands), and `units_db` — the
+    bundled GNU units database's `source`, `data_version`, and `data_updated`
+    (§2.4.6 / §5.4), read from the shipped file's own header so it can't drift.
     Example: {"status":"available","name":"mcp-gnu-units","version":"0.0.1",
-    "python":"3.12.3","mcp_sdk":"1.28.0","toolsets":[]}
+    "python":"3.12.3","mcp_sdk":"1.28.0","toolsets":[],
+    "units_db":{"source":"GNU units","data_version":"3.26","data_updated":"2026-02-25"}}
     """
     try:  # metadata may be absent (uninstalled SDK); never crash info()
         mcp_sdk = version("mcp")
     except PackageNotFoundError:
         mcp_sdk = "unknown"
+    try:  # header parse is cheap + best-effort; never crash info()
+        units_db = database_version()
+    except Exception:  # noqa: BLE001 - version reporting must not break health check
+        units_db = {"source": "GNU units"}
     return {
         "status": "available",
         "name": "mcp-gnu-units",
@@ -93,6 +98,7 @@ def info() -> dict:
         "python": platform.python_version(),
         "mcp_sdk": mcp_sdk,
         "toolsets": [],  # placeholder; filled when the engine lands (§5.4 / §2.4)
+        "units_db": units_db,
     }
 
 
@@ -214,5 +220,5 @@ def convert(
 # TODO §4.5 / FUTURE — remaining domain tools backed by the GNU units engine
 #           (convert_to_si, define_unit, list_prefixes). find_units landed per
 #           §14.1, convert per §16.1; the rest follow.
-#           When the engine version is surfaced, info() also reports the bundled
-#           GNU units database version it ships (§2.4 / §5.4).
+#           info() reports the bundled GNU units database version it ships via
+#           `units_db` (§2.4.6 / §5.4).
