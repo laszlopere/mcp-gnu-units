@@ -104,9 +104,7 @@ def process_incoming(message: SessionMessage) -> Incoming:
     repaired = repair_arguments(params["arguments"])
     if isinstance(repaired, dict):
         new_root = root.model_copy(update={"params": {**params, "arguments": repaired}})
-        forwarded = SessionMessage(
-            message=JSONRPCMessage(new_root), metadata=message.metadata
-        )
+        forwarded = SessionMessage(message=JSONRPCMessage(new_root), metadata=message.metadata)
         return Incoming(forward=forwarded)
 
     return Incoming(reply=_parse_error_reply(root.id, params.get("name")))

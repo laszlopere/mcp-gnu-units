@@ -131,9 +131,8 @@ def test_convert_invoke_through_app():
 
 def test_convert_non_conformable_errors_cleanly():
     # §16.1 — inconvertible units surface a clean ToolError, not a traceback.
-    from mcp.server.fastmcp.exceptions import ToolError
-
     import pytest
+    from mcp.server.fastmcp.exceptions import ToolError
 
     with pytest.raises(ToolError, match="non-conformable"):
         _call_via_app("convert", {"from_expr": "1 meter", "to_expr": "kg"})
