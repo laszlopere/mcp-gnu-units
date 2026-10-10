@@ -26,6 +26,8 @@ closure (the inverse expression references the function's own name).
 
 from __future__ import annotations
 
+import threading
+
 from .ast import BinOp, Expr, FuncCall, Inverse, Juxt, Neg, Num, Power, UnitRef
 from .builtins import BUILTINS
 from .dimension import DIMENSIONLESS, Dimension
@@ -63,7 +65,20 @@ class Evaluator:
     def __init__(self, symbols: SymbolTable) -> None:
         self._symbols = symbols
         self._cache: dict[str, Quantity] = {}
-        self._resolving: set[str] = set()
+        # The cycle guard is per thread: MCPServer runs sync tools on worker
+        # threads that share this evaluator, and a name another thread is still
+        # reducing is not a circular definition. The cache can stay shared --
+        # a racing write stores the same reduction.
+        self._local = threading.local()
+
+    @property
+    def _resolving(self) -> set[str]:
+        """Names this thread is currently reducing (the circular-definition guard)."""
+        try:
+            resolving: set[str] = self._local.resolving
+        except AttributeError:
+            resolving = self._local.resolving = set()
+        return resolving
 
     # -- expression walk -------------------------------------------------
 

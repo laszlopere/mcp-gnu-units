@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   error messages are unchanged; `serverInfo.version` now reports the
   mcp-gnu-units version instead of the SDK's.
 
+### Fixed
+- **Concurrent conversions no longer report a false "circular definition".**
+  mcp 2.x runs the tools on worker threads that share one evaluator, whose
+  circular-definition guard was shared too: two calls reducing the same unit
+  for the first time at once made the second one fail. The guard is now per
+  thread.
+
 ## [0.1.1] - 2026-10-10
 
 ### Fixed
