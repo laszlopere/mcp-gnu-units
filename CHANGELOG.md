@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Runs on the `mcp` SDK 2.x** (`mcp>=2.3.0,<3`). The server is built on
+  `MCPServer`, the 2.x successor to `FastMCP`. Tools, arguments, results and
+  error messages are unchanged; `serverInfo.version` now reports the
+  mcp-gnu-units version instead of the SDK's.
+
 ## [0.1.1] - 2026-10-10
 
 ### Fixed

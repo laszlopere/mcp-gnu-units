@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""§7.3 — prove the `info` tool is wired into the FastMCP app, not merely
+"""§7.3 — prove the `info` tool is wired into the MCPServer app, not merely
 importable. Introspect and invoke it through the MCP layer (end-to-end)."""
 
 import asyncio
@@ -31,7 +31,7 @@ def _call_via_app(name: str, arguments: dict) -> dict:
 
     result = asyncio.run(go())
     # call_tool returns a list of content blocks; the payload is JSON text.
-    contents = result[0] if isinstance(result, tuple) else result
+    contents = result.content
     return json.loads(contents[0].text)
 
 
@@ -58,8 +58,8 @@ def test_tool_has_description_and_input_schema():
     # §7.3.2 — non-empty description (docstring) + generated input schema.
     tool = next(t for t in asyncio.run(mcp.list_tools()) if t.name == "info")
     assert tool.description and tool.description.strip()
-    assert isinstance(tool.inputSchema, dict)
-    assert tool.inputSchema.get("type") == "object"
+    assert isinstance(tool.input_schema, dict)
+    assert tool.input_schema.get("type") == "object"
 
 
 def test_invoke_through_app_matches_payload():
@@ -140,7 +140,7 @@ def test_convert_invoke_through_app():
 def test_convert_non_conformable_errors_cleanly():
     # §16.1 — inconvertible units surface a clean ToolError, not a traceback.
     import pytest
-    from mcp.server.fastmcp.exceptions import ToolError
+    from mcp.server.mcpserver.exceptions import ToolError
 
     with pytest.raises(ToolError, match="non-conformable"):
         _call_via_app("convert", {"from_expr": "1 meter", "to_expr": "kg"})
@@ -160,7 +160,7 @@ def test_convert_to_si_invoke_through_app():
 def test_convert_to_si_nonlinear_errors_cleanly():
     # §17.1 — a nonlinear unit has no linear base form and errors cleanly.
     import pytest
-    from mcp.server.fastmcp.exceptions import ToolError
+    from mcp.server.mcpserver.exceptions import ToolError
 
     with pytest.raises(ToolError):
         _call_via_app("convert_to_si", {"expr": "tempF"})
@@ -178,7 +178,7 @@ def test_define_unit_invoke_through_app():
 def test_define_unit_unknown_errors_cleanly():
     # §13 — an undefined name surfaces a clean ToolError, not {"name": ...}.
     import pytest
-    from mcp.server.fastmcp.exceptions import ToolError
+    from mcp.server.mcpserver.exceptions import ToolError
 
     with pytest.raises(ToolError, match="not defined"):
         _call_via_app("define_unit", {"name": "zzznotaunit"})

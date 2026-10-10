@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """§16.2 — end-to-end golden pins for the `convert` tool, exercised through the
-FastMCP layer (`mcp.call_tool`), same path a real client drives.
+MCPServer layer (`mcp.call_tool`), same path a real client drives.
 
 Two ways to run it:
   * as part of the suite — `uv run pytest` collects `test_e2e_convert` below;
@@ -30,7 +30,7 @@ import asyncio
 import json
 import sys
 
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver.exceptions import ToolError
 
 from mcp_gnu_units.server import mcp
 
@@ -178,7 +178,7 @@ def _call(args: dict) -> tuple[str, object]:
         result = asyncio.run(go())
     except ToolError as exc:
         return "error", str(exc)
-    contents = result[0] if isinstance(result, tuple) else result
+    contents = result.content
     return "ok", json.loads(contents[0].text)
 
 

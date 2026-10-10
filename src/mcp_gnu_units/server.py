@@ -14,20 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""FastMCP application singleton — all tools register against this `mcp` app.
+"""MCPServer application singleton — all tools register against this `mcp` app.
 
-Transport is stdio (FastMCP default), which is what Claude Code / Desktop launch
+Transport is stdio (MCPServer default), which is what Claude Code / Desktop launch
 (TODO §4.4). No HTTP/SSE in the skeleton.
 """
 
 import platform
-from collections.abc import Sequence as AbcSequence
 from importlib.metadata import PackageNotFoundError, version
 from typing import Annotated, Any
 
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
-from mcp.types import ContentBlock
+from mcp.server.mcpserver import Context, MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
+from mcp.types import CallToolResult, InputRequiredResult
 from pydantic import Field, ValidationError
 
 from mcp_gnu_units import __version__
@@ -35,10 +34,10 @@ from mcp_gnu_units.engine import UnitsError, database_version, get_database
 from mcp_gnu_units.errors import format_validation_error
 
 
-class _GnuUnitsFastMCP(FastMCP):
-    """FastMCP that reshapes argument-validation errors for the model (TODO §4.6.3).
+class _GnuUnitsMCPServer(MCPServer):
+    """MCPServer that reshapes argument-validation errors for the model (TODO §4.6.3).
 
-    FastMCP wraps a failed pydantic argument validation as a ToolError whose
+    MCPServer wraps a failed pydantic argument validation as a ToolError whose
     `__cause__` is the ValidationError. We catch that one case and re-raise with
     a concise, field-naming message (errors.format_validation_error); the SDK
     still returns it as an `isError` result. Tool-body failures (a tool's own
@@ -47,10 +46,10 @@ class _GnuUnitsFastMCP(FastMCP):
     """
 
     async def call_tool(
-        self, name: str, arguments: dict[str, Any]
-    ) -> AbcSequence[ContentBlock] | dict[str, Any]:
+        self, name: str, arguments: dict[str, Any], context: Context[Any, Any] | None = None
+    ) -> CallToolResult | InputRequiredResult:
         try:
-            return await super().call_tool(name, arguments)
+            return await super().call_tool(name, arguments, context)
         except ToolError as exc:
             if isinstance(exc.__cause__, ValidationError):
                 raise ToolError(format_validation_error(name, exc.__cause__)) from exc.__cause__
@@ -58,8 +57,9 @@ class _GnuUnitsFastMCP(FastMCP):
 
 
 # TODO §4.1 — the singleton app. Every tool registers here.
-mcp = _GnuUnitsFastMCP(
+mcp = _GnuUnitsMCPServer(
     "mcp-gnu-units",
+    version=__version__,
     instructions=(
         "Precise, offline unit conversion and dimensional analysis backed by the "
         "GNU units database: convert between 3000+ units, evaluate compound unit "
@@ -80,7 +80,7 @@ def info() -> dict:
     bundled GNU units database's `source`, `data_version`, and `data_updated`
     (§2.4.6 / §5.4), read from the shipped file's own header so it can't drift.
     Example: {"status":"available","name":"mcp-gnu-units","version":"0.0.1",
-    "python":"3.12.3","mcp_sdk":"1.28.0","toolsets":[],
+    "python":"3.12.3","mcp_sdk":"2.3.0","toolsets":[],
     "units_db":{"source":"GNU units","data_version":"3.26","data_updated":"2026-02-25"}}
     """
     try:  # metadata may be absent (uninstalled SDK); never crash info()
