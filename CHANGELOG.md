@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-10
+
+### Fixed
+- **Cap the `mcp` SDK below 2.0.** mcp 2.x renamed `FastMCP` to `MCPServer`, so a
+  fresh install of 0.1.0 that resolved mcp 2.x crashed at startup with
+  `ModuleNotFoundError: No module named 'mcp.server.fastmcp'`.
+
 ## [0.1.0] - 2026-07-03
 
 First public release: a feature-complete, offline GNU units MCP server with all

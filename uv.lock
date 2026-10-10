@@ -505,7 +505,7 @@ cli = [
 
 [[package]]
 name = "mcp-gnu-units"
-version = "0.2.0.dev0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "json-repair" },
